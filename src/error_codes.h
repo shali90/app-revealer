@@ -1,0 +1,3 @@
+#define SW_OK 				0x9000
+#define INVALID_NOISE_SEED  0x6FFF
+#define DENIED_BY_USER 		0x6985

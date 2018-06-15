@@ -24,10 +24,12 @@
 #include "bolos_ux_common.h"
 
 #include "glyphs.h"
+#include "ux_nanos.h"
 
 //#ifdef OS_IO_SEPROXYHAL
 
 //uint8_t flags;
+//ux_revealer G_revealer;
 
 const bagl_element_t *
 screen_onboarding_4_restore_word_before_element_display_callback(
@@ -506,7 +508,14 @@ unsigned int screen_onboarding_4_restore_word_final_compare_button(
     case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT:
         // TODO replace with func to generate revealer
         //flags |= IO_ASYNCH_REPLY;
-        ui_confirm_seed_display_init();
+        if (!G_bolos_ux_context.input_seed_is_identical){
+            screen_onboarding_3_restore_init();
+        }
+        else {
+            //ui_confirm_seed_display_init();
+            G_revealer.words_seed_valid = 1;
+            ui_idle_init();
+        }
         //os_sched_exit(0);
         break;
     }

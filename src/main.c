@@ -18,16 +18,20 @@
 #include "os.h"
 #include "cx.h"
 #include "bolos_ux_common.h"
+#include "revealer.h"
+#include "error_codes.h"
+#include "ux_nanos.h"
 
 #include "os_io_seproxyhal.h"
 
 unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
-extern unsigned char seed_buffer[300];
 
-//bolos_ux_context_t G_bolos_ux_context;
+uint32_t PyLong[5];
 
 static unsigned int current_text_pos; // parsing cursor in the text to display
 static unsigned int text_y;           // current location of the displayed text
+
+ux_revealer G_revealer;
 
 // UI currently displayed
 extern enum UI_STATE { UI_IDLE, UI_TEXT, UI_APPROVAL };
@@ -39,10 +43,6 @@ ux_state_t ux;
 static unsigned char display_text_part(void);
 
 #define MAX_CHARS_PER_LINE 49
-#define SW_OK 0x9000
-#define REVEALER_CODE_LEN   18
-
-static const uint8_t NoiseSeedReference[]={0x0E,0xCA,0x2C,0x8C,0xFA,0x19,0xBE,0x8A,0x64,0xA7,0xD7,0x67,0x72,0x25,0x3A,0xC0,0x72,0x78};
 
 
 static char lineBuffer[50];
@@ -79,9 +79,13 @@ static void sample_main(void) {
     //UX_CALLBACK_SET_INTERVAL(500);
     volatile unsigned int rx = 0;
     volatile unsigned int tx = 0;
-    volatile uint8_t NoiseSeed[REVEALER_CODE_LEN];
     uint8_t flags;
-
+    /*PyLong[0] = 575908871;
+    PyLong[1] = 703977948;
+    PyLong[2] = 431917668;
+    PyLong[3] = 682767336;
+    PyLong[3] = 236;*/
+    revealer_struct_init();
     for (;;) {
     volatile unsigned short sw = 0;
 
@@ -102,18 +106,30 @@ static void sample_main(void) {
         }
 
         switch (G_io_apdu_buffer[1]) {
-          case 0xCA: //Recieve revealer code
-            memcpy(NoiseSeed,&G_io_apdu_buffer[5],REVEALER_CODE_LEN);
-            uint8_t idx;
-            for (idx=0; idx<REVEALER_CODE_LEN; idx++){
-                if (NoiseSeed[idx] != NoiseSeedReference[idx]){
-                    THROW(0x6dFF);
-                }
-            }
-            memset(G_io_apdu_buffer, 0x00, sizeof(G_io_apdu_buffer));
-            flags |= IO_ASYNCH_REPLY;
-            ui_type_seed_words_init();            
+        //Image :
+        //  - width  = 159
+        //  - height = 97
+        //  - pixels = 159*97 = 15423
+        //  - 8 pixels are encoded in one byte
+        //bit      7  6  5  4  3  2  1  0
+        //pixel   p7 p6 p5 p4 p3 p2 p1 p0
+            case 0xCA: 
+                flags |= IO_ASYNCH_REPLY;
+                //ui_type_seed_words_init();
+                ui_type_noise_seed_nanos_init();
             break;
+
+            case 0xCB: 
+            flags |= IO_ASYNCH_REPLY;
+            for (int i=0; i<241; i++){
+                G_io_apdu_buffer[i] = G_io_apdu_buffer[5+i];   
+            }
+            tx += 241;
+            G_io_apdu_buffer[241] = 0x90;
+            G_io_apdu_buffer[242] = 0x00;
+            io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, tx+2);        
+            break;
+
           default:
             THROW(0x6D00);
             break;
@@ -121,7 +137,9 @@ static void sample_main(void) {
       }
       CATCH_OTHER(e) {
         switch(e & 0xF000) {
-          case 0x6000:            
+          case 0x6000:
+            sw = e;                       
+            break;
           case SW_OK:
             sw = e;
             break;
@@ -133,6 +151,7 @@ static void sample_main(void) {
         G_io_apdu_buffer[tx] = sw>>8;
         G_io_apdu_buffer[tx+1] = sw;
         tx += 2;
+        io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, tx);
       }
       FINALLY {
         
@@ -233,7 +252,7 @@ __attribute__((section(".boot"))) int main(void) {
     current_text_pos = 0;
     text_y = 60;
     uiState = UI_IDLE;
-
+    
     // ensure exception will work as planned
     os_boot();
 
@@ -261,6 +280,12 @@ __attribute__((section(".boot"))) int main(void) {
             sample_main();
         }
         CATCH_OTHER(e) {
+            /*switch(e){
+                case INVALID_NOISE_SEED:
+                ui_idle_init();
+                sample_main();
+                break;
+            }   */      
         }
         FINALLY {
         }
