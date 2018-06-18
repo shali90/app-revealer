@@ -324,7 +324,7 @@ unsigned int ui_type_noise_seed_nanos_prepro(const  bagl_element_t* element){
       /*if (G_revealer.typedDigitLen >0){
         G_revealer.noise_seed_display[G_revealer.typedDigitLen+1] = '_';
       }*/ 
-    }
+    }    
   }
   /*else if (G_revealer.first_display == 0){
     return 0;
@@ -387,9 +387,10 @@ unsigned int ui_type_noise_seed_nanos_button(unsigned int button_mask,unsigned i
 }
 
 void revealer_struct_init(void){
-  memset(G_revealer.noise_seed, '\0', 36);
-  memset(G_revealer.noise_seed_display, '\0', 17);
-  memset(G_revealer.string_buffer, '\0', 20);
+  os_memset(G_revealer.noise_seed, '\0', 36);
+  os_memset(G_revealer.noise_seed_display, '\0', 17);
+  os_memset(G_revealer.string_buffer, '\0', 20);
+  os_memset(G_revealer.key, 0x00 ,4*KEY_LEN);
   G_revealer.first_display = 1;
   G_revealer.typedDigitLen = 0;
   G_revealer.offset = 7;

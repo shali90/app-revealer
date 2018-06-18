@@ -29,7 +29,6 @@
 //#ifdef OS_IO_SEPROXYHAL
 
 //uint8_t flags;
-//ux_revealer G_revealer;
 
 const bagl_element_t *
 screen_onboarding_4_restore_word_before_element_display_callback(

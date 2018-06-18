@@ -26,12 +26,11 @@
 
 unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 
-uint32_t PyLong[5];
-
 static unsigned int current_text_pos; // parsing cursor in the text to display
 static unsigned int text_y;           // current location of the displayed text
 
 ux_revealer G_revealer;
+//prng G_prng;
 
 // UI currently displayed
 extern enum UI_STATE { UI_IDLE, UI_TEXT, UI_APPROVAL };
@@ -80,11 +79,6 @@ static void sample_main(void) {
     volatile unsigned int rx = 0;
     volatile unsigned int tx = 0;
     uint8_t flags;
-    /*PyLong[0] = 575908871;
-    PyLong[1] = 703977948;
-    PyLong[2] = 431917668;
-    PyLong[3] = 682767336;
-    PyLong[3] = 236;*/
     revealer_struct_init();
     for (;;) {
     volatile unsigned short sw = 0;
@@ -113,23 +107,31 @@ static void sample_main(void) {
         //  - 8 pixels are encoded in one byte
         //bit      7  6  5  4  3  2  1  0
         //pixel   p7 p6 p5 p4 p3 p2 p1 p0
-            case 0xCA: 
-                flags |= IO_ASYNCH_REPLY;
-                //ui_type_seed_words_init();
-                ui_type_noise_seed_nanos_init();
-            break;
 
-            case 0xCB: 
-            flags |= IO_ASYNCH_REPLY;
-            for (int i=0; i<241; i++){
-                G_io_apdu_buffer[i] = G_io_apdu_buffer[5+i];   
-            }
-            tx += 241;
-            G_io_apdu_buffer[241] = 0x90;
-            G_io_apdu_buffer[242] = 0x00;
-            io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, tx+2);        
-            break;
-
+            /*#define NOISE_SEED_NOT_SET  0x6FF0
+            #define SEED_WORDS_NOT_SET  0x6FF1
+            #define BOTH_SEEDS_UNSET    0x6FF2*/  
+            case 0xCA: // Start generating revealer
+                //flags |= IO_ASYNCH_REPLY;
+                if ((G_revealer.noise_seed_valid == 1)&&(G_revealer.words_seed_valid == 1)){ //Noise seed and seed words OK => generate revealer
+                    noiseSeedToKey();
+                    //tx += 33;
+                    THROW(SW_OK);
+                }
+                else if ((G_revealer.noise_seed_valid == 1)&&(G_revealer.words_seed_valid == 0)){ //Seed words not set
+                    THROW(SEED_WORDS_NOT_SET); 
+                }
+                else if ((G_revealer.noise_seed_valid == 0)&&(G_revealer.words_seed_valid == 1)){
+                    THROW(NOISE_SEED_NOT_SET);
+                }
+                else{
+                    //THROW(BOTH_SEEDS_UNSET);   //TODO uncomment and remove whats next
+                    noiseSeedToKey();
+                    //init_prng(19650218);
+                    //tx += 4;
+                    THROW(SW_OK);
+                }
+                break;
           default:
             THROW(0x6D00);
             break;
@@ -152,9 +154,10 @@ static void sample_main(void) {
         G_io_apdu_buffer[tx+1] = sw;
         tx += 2;
         io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, tx);
+        flags |= IO_ASYNCH_REPLY;
+        ui_idle_init();
       }
       FINALLY {
-        
       }
     }
     END_TRY;
@@ -224,7 +227,7 @@ unsigned char io_event(unsigned char channel) {
             UX_TICKER_EVENT(G_io_seproxyhal_spi_buffer, {
                 // defaulty retrig very soon (will be overriden during
                 // stepper_prepro)
-                UX_CALLBACK_SET_INTERVAL(500);
+                UX_CALLBACK_SET_INTERVAL(100);
                 UX_REDISPLAY();
             });
         #endif 

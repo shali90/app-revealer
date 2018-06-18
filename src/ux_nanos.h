@@ -1,13 +1,18 @@
+#ifndef UX_NANOS_H
+#define UX_NANOS_H
+
 #include "glyphs.h"
 #include "os.h"
 #include "bolos_ux_common.h"
 
 #define NOISE_SEED_LEN   36
+#define KEY_LEN			 5
 
 typedef struct {
-	char noise_seed[36];
+	char noise_seed[NOISE_SEED_LEN];
 	char noise_seed_display[17];
 	char string_buffer[20];
+	uint32_t key[KEY_LEN];
 	uint8_t first_display;
 	uint8_t typedDigitLen;
 	uint8_t offset;
@@ -22,3 +27,4 @@ void ui_idle_reinit(void);
 void ui_type_noise_seed_nanos_init(void);
 void revealer_struct_init(void);
 
+#endif //UX_NANOS_H
