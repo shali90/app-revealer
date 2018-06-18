@@ -391,6 +391,7 @@ void revealer_struct_init(void){
   os_memset(G_revealer.noise_seed_display, '\0', 17);
   os_memset(G_revealer.string_buffer, '\0', 20);
   os_memset(G_revealer.key, 0x00 ,4*KEY_LEN);
+  //os_memset(G_revealer.key_len, 0x00 , 1);
   G_revealer.first_display = 1;
   G_revealer.typedDigitLen = 0;
   G_revealer.offset = 7;

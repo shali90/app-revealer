@@ -45,13 +45,80 @@ void noiseSeedToKey(void){
 	byte = seed[0];
 	byte == (byte >= '0' && byte <= '9')?byte - '0':byte - 'a' + 10;
 	G_revealer.key[4] = (byte&0x0F);
+
+	G_revealer.key_len = 5;
+	for (i=4; i>=0; i--){
+		if (G_revealer.key[i]==0x00000000){
+			G_revealer.key_len--;
+		}
+		else {
+			break;
+		}
+	}
+
+	/*G_io_apdu_buffer[0] =  G_revealer.key[0]&0x000000FF;
+	G_io_apdu_buffer[1] = (G_revealer.key[0]&0x0000FF00)>>8;
+	G_io_apdu_buffer[2] = (G_revealer.key[0]&0x00FF0000)>>16;
+	G_io_apdu_buffer[3] = (G_revealer.key[0]&0xFF000000)>>24;*/
+
+	//G_io_apdu_buffer[0]=G_revealer.key_len;
+
 }
 
+WIDE internalStorage_t N_storage_real;
+#define N_storage (*(WIDE internalStorage_t *)PIC(&N_storage_real)) 
+
+
 void init_prng(uint32_t s){
-    int mti;
-    G_prng.mt[0] = s;    
+    uint32_t mti;
+    uint32_t val;
+    nvm_write(&N_storage.mt[0], (uint32_t *)&s, sizeof(uint32_t));
     for (mti=1; mti<N; mti++) {
-        G_prng.mt[mti] = (1812433253U * (G_prng.mt[mti-1] ^ (G_prng.mt[mti-1] >> 30)) + mti);
-    }    
-    G_prng.index = mti;    
+        val = (1812433253U * (N_storage.mt[mti-1] ^ (N_storage.mt[mti-1] >> 30)) + mti);
+        nvm_write(&N_storage.mt[mti], (uint32_t *)&val, sizeof(uint32_t));
+    }
+    nvm_write(&N_storage.index, (uint32_t *)&mti, sizeof(uint32_t));
+
+    G_io_apdu_buffer[0] =  N_storage.mt[10]&0x000000FF;
+    G_io_apdu_buffer[1] = (N_storage.mt[10]&0x0000FF00)>>8;
+    G_io_apdu_buffer[2] = (N_storage.mt[10]&0x00FF0000)>>16;
+    G_io_apdu_buffer[3] = (N_storage.mt[10]&0xFF000000)>>24;
+}
+
+void init_by_array(uint8_t key_length){
+	uint32_t i, j, k, val;
+	init_prng(19650218U);
+	i = 1;
+	j = 0;
+	k = (N>key_length ? N : key_length);
+	//k = N;
+	for (; k; k--){
+		val = (N_storage.mt[i] ^ ((N_storage.mt[i-1] ^ (N_storage.mt[i-1] >> 30)) * 1664525U))+ G_revealer.key[j] + (uint32_t)j;
+		i++;
+		j++;
+		nvm_write(&N_storage.mt[i], (uint32_t *)&val, sizeof(uint32_t));
+		if (i>=N) {
+			val = N_storage.mt[N-1];
+			nvm_write(&N_storage.mt[0], (uint32_t *)&val, sizeof(uint32_t)); 
+			i=1; 
+		}
+        if (j>=key_length) j=0;
+	}
+	for (k=N-1; k; k--) {
+        val = (N_storage.mt[i] ^ ((N_storage.mt[i-1] ^ (N_storage.mt[i-1] >> 30)) * 1566083941U))- (uint32_t)i;
+        nvm_write(&N_storage.mt[i], (uint32_t *)&val, sizeof(uint32_t));
+        i++;
+        if (i>=N) {
+        	val = N_storage.mt[N-1];
+        	nvm_write(&N_storage.mt[0], (uint32_t *)&val, sizeof(uint32_t));
+        	i=1;
+        }
+    }
+    val = 0x80000000U;
+    nvm_write(&N_storage.mt[0], (uint32_t *)&val, sizeof(uint32_t));
+
+    G_io_apdu_buffer[0] =  N_storage.mt[10]&0x000000FF;
+    G_io_apdu_buffer[1] = (N_storage.mt[10]&0x0000FF00)>>8;
+    G_io_apdu_buffer[2] = (N_storage.mt[10]&0x00FF0000)>>16;
+    G_io_apdu_buffer[3] = (N_storage.mt[10]&0xFF000000)>>24;
 }

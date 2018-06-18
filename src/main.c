@@ -127,8 +127,9 @@ static void sample_main(void) {
                 else{
                     //THROW(BOTH_SEEDS_UNSET);   //TODO uncomment and remove whats next
                     noiseSeedToKey();
-                    //init_prng(19650218);
-                    //tx += 4;
+                    init_prng(19650218);
+                    //init_by_array(4);
+                    tx += 4;
                     THROW(SW_OK);
                 }
                 break;
@@ -155,7 +156,7 @@ static void sample_main(void) {
         tx += 2;
         io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, tx);
         flags |= IO_ASYNCH_REPLY;
-        ui_idle_init();
+        //ui_idle_init();
       }
       FINALLY {
       }
