@@ -127,8 +127,8 @@ static void sample_main(void) {
                 else{
                     //THROW(BOTH_SEEDS_UNSET);   //TODO uncomment and remove whats next
                     noiseSeedToKey();
-                    init_prng(19650218);
-                    //init_by_array(4);
+                    //init_prng(19650218);
+                    init_by_array(4);
                     tx += 4;
                     THROW(SW_OK);
                 }
