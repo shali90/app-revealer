@@ -122,3 +122,55 @@ void init_by_array(uint8_t key_length){
     G_io_apdu_buffer[2] = (N_storage.mt[623]&0x00FF0000)>>16;
     G_io_apdu_buffer[3] = (N_storage.mt[623]&0xFF000000)>>24;*/
 }
+uint32_t genrand_int32(void){
+	uint32_t y, val;
+	static const uint32_t mag01[2] = {0x0U, MATRIX_A};
+
+	if (N_storage.index >=N){
+		int kk;
+		for (kk=0;kk<N-M;kk++) {
+            y = (N_storage.mt[kk]&UPPER_MASK)|(N_storage.mt[kk+1]&LOWER_MASK);
+            val = N_storage.mt[kk+M] ^ (y >> 1) ^ mag01[y & 0x1U];
+            nvm_write(&N_storage.mt[kk], (uint32_t *)&val, sizeof(uint32_t));
+        }
+        for (;kk<N-1;kk++) {
+            y = (N_storage.mt[kk]&UPPER_MASK)|(N_storage.mt[kk+1]&LOWER_MASK);
+            val = N_storage.mt[kk+(M-N)] ^ (y >> 1) ^ mag01[y & 0x1U];
+            nvm_write(&N_storage.mt[kk], (uint32_t *)&val, sizeof(uint32_t));
+        }
+        
+        y = (N_storage.mt[N-1]&UPPER_MASK)|(N_storage.mt[0]&LOWER_MASK);
+        val = N_storage.mt[M-1] ^ (y >> 1) ^ mag01[y & 0x1U];
+        nvm_write(&N_storage.mt[N-1], (uint32_t *)&val, sizeof(uint32_t));
+        val = 0;
+        nvm_write(&N_storage.index, (uint32_t *)&val, sizeof(uint32_t));
+	}
+
+	/*G_io_apdu_buffer[0] =  N_storage.mt[1]&0x000000FF;
+    G_io_apdu_buffer[1] = (N_storage.mt[1]&0x0000FF00)>>8;
+    G_io_apdu_buffer[2] = (N_storage.mt[1]&0x00FF0000)>>16;
+    G_io_apdu_buffer[3] = (N_storage.mt[1]&0xFF000000)>>24;*/
+
+
+	val = N_storage.index;
+	y = N_storage.mt[val++];
+	nvm_write(&N_storage.index, (uint32_t *)&val, sizeof(uint32_t));
+    y ^= (y >> 11);
+    y ^= (y << 7) & 0x9d2c5680U;
+    y ^= (y << 15) & 0xefc60000U;
+    y ^= (y >> 18);
+	/*G_io_apdu_buffer[0] =  y&0x000000FF;
+    G_io_apdu_buffer[1] = (y&0x0000FF00)>>8;
+    G_io_apdu_buffer[2] = (y&0x00FF0000)>>16;
+    G_io_apdu_buffer[3] = (y&0xFF000000)>>24;*/
+    return y;
+}
+
+uint8_t random_getrandbits(uint8_t k){
+	//return (uint8_t)(genrand_int32()>>32-k);
+	uint8_t ret;
+	do {
+		ret = (uint8_t)(genrand_int32()>>32-k);		
+	}while (ret >1);
+	return ret;
+}

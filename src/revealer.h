@@ -4,6 +4,10 @@
 
 void noiseSeedToKey(void);
 #define N  	624
+#define M 397
+#define UPPER_MASK 0x80000000U
+#define LOWER_MASK 0x7fffffffU
+#define MATRIX_A   0x9908b0dfU
 
 typedef struct internalStorage_t {
 // #define STORAGE_MAGIC 0xDEAD1337

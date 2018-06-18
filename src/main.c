@@ -129,7 +129,13 @@ static void sample_main(void) {
                     noiseSeedToKey();
                     //init_prng(19650218);
                     init_by_array(4);
-                    tx += 4;
+                    uint8_t shot = 2;
+                    for (int i=0; i<50; i++){
+                            G_io_apdu_buffer[i]=random_getrandbits(2);
+                    }
+                    tx += 50;
+                    //random_getrandbits(2);
+                    //tx+=4;
                     THROW(SW_OK);
                 }
                 break;
