@@ -81,8 +81,8 @@ def update_image_byte2(img):
 def update_image_chunk2(img, bytes):
     white = qRgba(255, 255, 255, 0)
     black = qRgba(0, 0, 0, 255)
-    y = int(img.px_cnt / img.width())
-    x = img.px_cnt % img.width()
+    x = int(img.px_cnt / img.height())
+    y = img.px_cnt % img.height()
     if img.px_cnt == 0:
         x = 0
         y = 0
@@ -96,8 +96,8 @@ def update_image_chunk2(img, bytes):
             elif (b >> i) & 1 == 1:
                 img.setPixel(x, y, white)
             img.px_cnt += 1
-            y = int(img.px_cnt/img.width())
-            x = img.px_cnt%img.width()
+            x = int(img.px_cnt/img.height())
+            y = img.px_cnt%img.height()
     return img
 
 def pixelcode_2x2(img):
