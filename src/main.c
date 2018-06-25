@@ -103,7 +103,7 @@ static void sample_main(void) {
     volatile unsigned int tx = 0;
     uint8_t flags;
     revealer_struct_init();
-    uint8_t chunk_nb;
+    uint8_t col;
     //os_memset(words_image, 0x00, 1928);
     //os_memset(noise_image, 0x00, 1928);
     //os_memset(noise_frame, 0x00, 20);
@@ -156,9 +156,9 @@ static void sample_main(void) {
                 }
                 else{*/
                     //THROW(BOTH_SEEDS_UNSET);   //TODO uncomment and remove whats next
-                    noiseSeedToKey();
+                    //noiseSeedToKey();
                     //init_prng(19650218);
-                    init_by_array(4);
+                    //init_by_array(4);
                     
                     /*uint8_t noise_frame[WIDTH];
                     for (int i=0; i<WIDTH; i++){
@@ -170,8 +170,11 @@ static void sample_main(void) {
 
                     //write_words();
                     //THROW(0x6FFF);
-                    write_noise();
-                    tx += send_img_chunk(0);
+                    //write_noise();
+                    write_words();
+                    //tx += send_img_chunk(0);
+                    tx += send_words(0);
+
                     /*for (int i=0; i<CHUNK_SIZE; i++){
                         G_io_apdu_buffer[i] = random_getrandbits(2);
                     }
@@ -182,8 +185,10 @@ static void sample_main(void) {
                 //}
                 break;
             case 0xCB:                
-                chunk_nb = G_io_apdu_buffer[3];
-                tx += send_img_chunk(chunk_nb);
+                //chunk_nb = G_io_apdu_buffer[3];
+                //tx += send_img_chunk(chunk_nb);
+                tx += send_words(1);
+
                 THROW(SW_OK);
                 break;
             case 0xCC:
@@ -197,10 +202,14 @@ static void sample_main(void) {
       CATCH_OTHER(e) {
         switch(e & 0xF000) {
           case 0x6000:
-            sw = e;                       
+            sw = e;
+            tx += 1;
+            //G_io_apdu_buffer[0]=01;
+            //tx += send_img_chunk(0);                       
             break;
           case SW_OK:
             sw = e;
+            //tx += send_img_chunk(0); 
             break;
           default:
             sw = 0x6800 | (e&0x7FF);

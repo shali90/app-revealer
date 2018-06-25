@@ -289,8 +289,13 @@ const bagl_element_t ui_type_noise_seed_nanos[] = {
      0, 0, 
      NULL, NULL, NULL },
 
-  { {BAGL_LABELINE,   0x01,    0,   12, 128,  32,    0,    0,         0,   0xFFFFFF, 0x000000,    BAGL_FONT_OPEN_SANS_EXTRABOLD_11px|BAGL_FONT_ALIGNMENT_CENTER, 0  }, 
+  /*{ {BAGL_LABELINE,   0x01,    0,   12, 128,  32,    0,    0,         0,   0xFFFFFF, 0x000000,    BAGL_FONT_OPEN_SANS_EXTRABOLD_11px|BAGL_FONT_ALIGNMENT_CENTER, 0  }, 
     "Enter noise seed",  
+    0, 
+    0, 0, 
+    NULL, NULL, NULL },*/
+  { {BAGL_LABELINE,   0x01,    0,   12, 128,  32,    0,    0,         0,   0xFFFFFF, 0x000000,    BAGL_FONT_OPEN_SANS_REGULAR_11px|BAGL_FONT_ALIGNMENT_CENTER, 0  }, 
+    "a b A B",  
     0, 
     0, 0, 
     NULL, NULL, NULL },

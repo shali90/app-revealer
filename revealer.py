@@ -14,6 +14,8 @@ from electrum_gui.qt.util import *
 from PyQt5.QtGui import QImage, QBitmap
 import array
 
+import time
+
 
 def auto_int(x):
     return int(x, 0)
@@ -83,21 +85,26 @@ def update_image_chunk2(img, bytes):
     black = qRgba(0, 0, 0, 255)
     x = int(img.px_cnt / img.height())
     y = img.px_cnt % img.height()
+    #x = img.px_cnt % img.width()
+    #y = int(img.px_cnt / img.width())
     if img.px_cnt == 0:
         x = 0
         y = 0
     for b in bytes:
         for i in range(8):
-            if img.px_cnt >= 15423:
+            #if img.px_cnt >= 15423:
+            if img.px_cnt >= 80*20:
                 return img
-            print(x,y)
-            if (b >> i) & 1 == 0:
+            #print(x,y)
+            if (b >>i) & 1 == 0:
                 img.setPixel(x, y, black)
-            elif (b >> i) & 1 == 1:
+            elif (b >>i) & 1 == 1:
                 img.setPixel(x, y, white)
             img.px_cnt += 1
             x = int(img.px_cnt/img.height())
             y = img.px_cnt%img.height()
+            #x = img.px_cnt % img.width()
+            #y = int(img.px_cnt / img.width())
     return img
 
 def pixelcode_2x2(img):
@@ -114,7 +121,6 @@ def pixelcode_2x2(img):
                 result.setPixel(x * 2, y * 2 + 1, white)
                 result.setPixel(x * 2 + 1, y * 2, white)
                 result.setPixel(x * 2, y * 2, black)
-
             else:
                 result.setPixel(x * 2 + 1, y * 2 + 1, white)
                 result.setPixel(x * 2, y * 2 + 1, black)
@@ -122,7 +128,60 @@ def pixelcode_2x2(img):
                 result.setPixel(x * 2, y * 2, white)
     return result
 
+def write_pixels(img, b, x, y):
+    white = qRgba(255, 255, 255, 0)
+    black = qRgba(0, 0, 0, 255)
+    for i in range(8):
+        print(x+i, y)
+        if (b >> 7-i) & 1 == 0:
+            img.setPixel(x+i, y, black)
+            #img.setPixel(y, x + i, white)
+        if (b >> 7-i) & 1 == 1:
+            img.setPixel(x+i, y, white)
+            #img.setPixel(y, x + i, black)
+        img.YX += 1
+    return img
 
+def write_pixels2(img, b, x, y):
+    white = qRgba(255, 255, 255, 0)
+    black = qRgba(0, 0, 0, 255)
+    for i in range(8):
+        print(x, y+i)
+        if (b >> i) & 1 == 0:
+            img.setPixel(x, y+i, black)
+            #img.setPixel(y, x + i, white)
+        if (b >> i) & 1 == 1:
+            img.setPixel(x, y+i, white)
+            #img.setPixel(y, x + i, black)
+        img.YX += 1
+    return img
+
+
+def makeImage(img, bytes):
+    for y in range(int(img.height())):
+        for x in range(int(img.width()/8)):
+            bytenum = x*img.height() + y
+            print("bytenum = %d x = %d y = %d" %(bytenum, x, y))
+            write_pixels(img, bytes[bytenum], x*8, y)
+            if img.YX >= img.width()*img.height():
+                img.save(os.getcwd() + '/test1.png')
+                return img
+            img.save(os.getcwd() + '/test1.png')
+            #time.sleep(0.3)
+    return img
+
+def makeImage2(img, bytes):
+    for y in range(int(img.height()/8)):
+        for x in range(int(img.width())):
+            bytenum = y*img.width() + x
+            print("bytenum = %d x = %d y = %d" %(bytenum, x, y))
+            write_pixels2(img, bytes[bytenum], x, y*8)
+            if img.YX >= img.width()*img.height():
+                img.save(os.getcwd() + '/test2.png')
+                return img
+        img.save(os.getcwd() + '/test2.png')
+            #time.sleep(0.3)
+    return img
 
 img = QImage(159,97, QImage.Format_ARGB32)
 #bitmap = QBitmap.fromImage(img, Qt.MonoOnly)
@@ -135,38 +194,38 @@ img = QImage(159,97, QImage.Format_ARGB32)
 #img.setPixel(x,y,random.randint(0, 1))
 img = blank(img)
 
-img.px_cnt = 0
+img.YX = 0
 if 0:
     data = [0]*250
 
     for i in range(8):
         update_image_chunk2(img,data)
 
-    img.save('/home/philippe/Nano S projects/bolos-app-revealer/test.png')
+    img.save(os.getcwd()+'/test.png')
 
     img = img.convertToFormat(QImage.Format_Mono)
     img = pixelcode_2x2(img)
 
-    img.save('/home/philippe/Nano S projects/bolos-app-revealer/cypherseed.png')
+    img.save(os.getcwd()+'/cypherseed.png')
 if 1:
     args = get_argparser().parse_args()
     dongle = getDongle(args.apdu)
 
     data = binascii.unhexlify("80CA000000")
     result = dongle.exchange(bytearray(data))
+
     if args.apdu:
         print("<= Clear " + str(result))
-    img = update_image_chunk2(img, result)
-    #img.save('/home/philippe/Nano S projects/bolos-app-revealer/test0.png')
-    for i in range(7):
-        data = binascii.unhexlify("80CB000"+str(i+1)+"00")
-        result = dongle.exchange(bytearray(data))
-        if args.apdu:
-            print("<= Clear " + str(result))
-        img = update_image_chunk2(img, result)
-    img.save('/home/philippe/Nano S projects/bolos-app-revealer/test.png')
-    img = img.convertToFormat(QImage.Format_Mono)
-    img = pixelcode_2x2(img)
-
-    img.save('/home/philippe/Nano S projects/bolos-app-revealer/cypherseed.png')
+    #img = update_image_chunk2(img, result)
+    if 1:
+        for i in range(8):
+            data = binascii.unhexlify("80CB000"+str(i+1)+"00")
+            result += dongle.exchange(bytearray(data))
+            if args.apdu:
+                print("<= Clear " + str(result))
+        img = makeImage2(img, result)
+        #img.save('/home/philippe/Nano S projects/bolos-app-revealer/test1.png')
+        img = img.convertToFormat(QImage.Format_Mono)
+        img = pixelcode_2x2(img)
+    img.save(os.getcwd()+'/cypherseed1.png')
 
