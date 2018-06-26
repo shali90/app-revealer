@@ -1,8 +1,8 @@
 #include "revealer.h"
 #include "ux_nanos.h"
-//#include "bagl.h"
+#include "font.h"
 
-//ux_revealer G_revealer;
+
 
 uint8_t isNoise(char * string, uint8_t hashPos){
 	uint8_t computedHash[32];
@@ -19,11 +19,8 @@ uint8_t isNoise(char * string, uint8_t hashPos){
 	return 0;
 }
 
-//TODO replace with G_revealer.noise_seed
-static const char  seed[] = "0eca2c8cfa19be8a64a7d76772253ac07";
-//prng G_prng;
-
-//#define KEY_LEN 5
+// test noise seed
+//static const char  seed[] = "0eca2c8cfa19be8a64a7d76772253ac07";
 
 void noiseSeedToKey(void){
 	uint8_t byte = 0;
@@ -34,16 +31,14 @@ void noiseSeedToKey(void){
 	for (i = 0; i < KEY_LEN-1; i++){
         shift = 0;
 		for (uint8_t j = offset-8*i; j > offset-8*i - 8; j--){
-			//TODO replace with G_revealer.noise_seed
-			byte = seed[j];
+			byte = G_revealer.noise_seed[j];
 			if (byte >= '0' && byte <= '9') byte = byte - '0';
         	else if (byte >= 'a' && byte <='f') byte = byte - 'a' + 10;
-        	//else if (byte >= 'A' && byte <='F') byte = byte - 'A' + 10;
         	G_revealer.key[i] += (byte&0x0F) << shift*4;
         	shift++;
 		}
 	}
-	byte = seed[0];
+	byte = G_revealer.noise_seed[0];
 	byte == (byte >= '0' && byte <= '9')?byte - '0':byte - 'a' + 10;
 	G_revealer.key[4] = (byte&0x0F);
 
@@ -56,14 +51,6 @@ void noiseSeedToKey(void){
 			break;
 		}
 	}
-
-	/*G_io_apdu_buffer[0] =  G_revealer.key[0]&0x000000FF;
-	G_io_apdu_buffer[1] = (G_revealer.key[0]&0x0000FF00)>>8;
-	G_io_apdu_buffer[2] = (G_revealer.key[0]&0x00FF0000)>>16;
-	G_io_apdu_buffer[3] = (G_revealer.key[0]&0xFF000000)>>24;*/
-
-	//G_io_apdu_buffer[0]=G_revealer.key_len;
-
 }
 
 WIDE internalStorage_t N_storage_real;
@@ -79,11 +66,6 @@ void init_prng(uint32_t s){
         nvm_write(&N_storage.mt[mti], (uint32_t *)&val, sizeof(uint32_t));
     }
     nvm_write(&N_storage.index, (uint32_t *)&mti, sizeof(uint32_t));
-
-    /*G_io_apdu_buffer[0] =  N_storage.mt[10]&0x000000FF;
-    G_io_apdu_buffer[1] = (N_storage.mt[10]&0x0000FF00)>>8;
-    G_io_apdu_buffer[2] = (N_storage.mt[10]&0x00FF0000)>>16;
-    G_io_apdu_buffer[3] = (N_storage.mt[10]&0xFF000000)>>24;*/
 }
 
 void init_by_array(uint8_t key_length){
@@ -116,13 +98,8 @@ void init_by_array(uint8_t key_length){
     }
     val = 0x80000000U;
     nvm_write(&N_storage.mt[0], (uint32_t *)&val, sizeof(uint32_t));
-
-
-    /*G_io_apdu_buffer[0] =  N_storage.mt[623]&0x000000FF;
-    G_io_apdu_buffer[1] = (N_storage.mt[623]&0x0000FF00)>>8;
-    G_io_apdu_buffer[2] = (N_storage.mt[623]&0x00FF0000)>>16;
-    G_io_apdu_buffer[3] = (N_storage.mt[623]&0xFF000000)>>24;*/
 }
+
 uint32_t genrand_int32(void){
 	uint32_t y, val;
 	static const uint32_t mag01[2] = {0x0U, MATRIX_A};
@@ -146,13 +123,6 @@ uint32_t genrand_int32(void){
         val = 0;
         nvm_write(&N_storage.index, (uint32_t *)&val, sizeof(uint32_t));
 	}
-
-	/*G_io_apdu_buffer[0] =  N_storage.mt[1]&0x000000FF;
-    G_io_apdu_buffer[1] = (N_storage.mt[1]&0x0000FF00)>>8;
-    G_io_apdu_buffer[2] = (N_storage.mt[1]&0x00FF0000)>>16;
-    G_io_apdu_buffer[3] = (N_storage.mt[1]&0xFF000000)>>24;*/
-
-
 	val = N_storage.index;
 	y = N_storage.mt[val++];
 	nvm_write(&N_storage.index, (uint32_t *)&val, sizeof(uint32_t));
@@ -160,11 +130,7 @@ uint32_t genrand_int32(void){
     y ^= (y << 7) & 0x9d2c5680U;
     y ^= (y << 15) & 0xefc60000U;
     y ^= (y >> 18);
-	/*G_io_apdu_buffer[0] =  y&0x000000FF;
-    G_io_apdu_buffer[1] = (y&0x0000FF00)>>8;
-    G_io_apdu_buffer[2] = (y&0x00FF0000)>>16;
-    G_io_apdu_buffer[3] = (y&0xFF000000)>>24;*/
-    return y;
+	return y;
 }
 
 uint8_t random_getrandbits(uint8_t k){
@@ -175,34 +141,7 @@ uint8_t random_getrandbits(uint8_t k){
 	return ret;
 }
 
-uint8_t get_words(void){
-	int offset = 0;
-    int i = 0;
-    switch (G_bolos_ux_context.onboarding_kind){
-      case 24:
-        offset = 128;
-        break;
-      case 18:
-        offset = 64;
-        break;
-      case 12:
-        offset = 64;
-        break;
-      default:
-        offset = 0;
-        break;
-    }
-    while(G_bolos_ux_context.string_buffer[offset] != 0x00){
-        G_io_apdu_buffer[i] = G_bolos_ux_context.string_buffer[offset];
-        offset++;
-        i++;
-    }
-    return i;
-}
-#include "font.h"
-
-
-// Above code is adapted from Nano S MCU screen HAL driver, screen is replaced by an image matrix stored in nvram cf revealer.h
+// Code below is adapted from Nano S MCU screen HAL driver, screen is replaced by an image matrix stored in nvram cf revealer.h
 unsigned int screen_changed; // to avoid screen update for nothing
 
 int screen_draw_x;
@@ -319,7 +258,6 @@ void draw_bitmap_within_rect(int x, int y, unsigned int width, unsigned int heig
   screen_draw_x = x;
   screen_draw_y = y;
   screen_draw_width = width;
-  //THROW(0x6FFF);
   screen_draw_height = height;
   screen_draw_YX = YX;
   screen_draw_YXlinemax = YXlinemax;
@@ -329,12 +267,11 @@ void draw_bitmap_within_rect(int x, int y, unsigned int width, unsigned int heig
   draw_bitmap_within_rect_internal(bit_per_pixel, bitmap, bitmap_length_bits);
 }
 
-void draw_bitmap_continue(unsigned int bit_per_pixel, const unsigned char* bitmap, unsigned int bitmap_length_bits) {
+/*void draw_bitmap_continue(unsigned int bit_per_pixel, const unsigned char* bitmap, unsigned int bitmap_length_bits) {
   draw_bitmap_within_rect_internal(bit_per_pixel, bitmap, bitmap_length_bits);
-}
+}*/
 
-// draw a simple rect
-void draw_rect(unsigned int color, int x, int y, unsigned int width, unsigned int height) {
+/*void draw_rect(unsigned int color, int x, int y, unsigned int width, unsigned int height) {
   unsigned int i;
 
   if (x+width > IMG_WIDTH || x < 0) {
@@ -376,7 +313,7 @@ void draw_rect(unsigned int color, int x, int y, unsigned int width, unsigned in
       break;
     }
   }
-}
+}*/
 
 int draw_string(unsigned short font_id, unsigned int fgcolor, unsigned int bgcolor, int x, int y, unsigned int width, unsigned int height, const void* text, unsigned int text_length, unsigned char text_encoding) {
   unsigned int xx;
@@ -384,49 +321,10 @@ int draw_string(unsigned short font_id, unsigned int fgcolor, unsigned int bgcol
   colors[0] = bgcolor;
   colors[1] = fgcolor;
 
-  //const bagl_font_t *font = bagl_get_font(font_id);
   const bagl_font_t *font = &fontFONT_11PX;
   if (font == NULL) {
     return 0;
   }
-
-
-  /*if (font->bpp > 1) {
-    // fgcolor = 0x7e7ecc
-    // bgcolor = 0xeca529
-    // $1 = {0xeca529, 0xc6985f, 0xa28b95, 0x7e7ecc}
-
-    int color_count = 1<<(font->bpp);
-
-    memset(colors, 0, sizeof(colors));
-    colors[0] = bgcolor;
-    colors[color_count-1] = fgcolor;
-
-    // compute for all base colors
-    int off;
-    for (off = 0; off < 3; off++) {
-
-      int cfg = (fgcolor>>(off*8))&0xFF;
-      int cbg = (bgcolor>>(off*8))&0xFF;
-
-      int crange = MAX(cfg,cbg)-MIN(cfg,cbg)+1;
-      int cinc = crange/(color_count-1UL);
-
-      if (cfg > cbg) {
-        int i;
-        for (i=1; i < color_count-1UL; i++) {
-          colors[i] |= MIN(0xFF, cbg+i*cinc)<<(off*8);
-        }
-      }
-      else {
-        int i;
-
-        for (i=1; i < color_count-1UL; i++) {
-          colors[i] |= MIN(0xFF, cfg+(color_count-1-i)*cinc)<<(off*8);
-        }
-      }
-    }
-  }*/
 
   // always comparing this way, very optimized etc
   width += x;
@@ -444,7 +342,10 @@ int draw_string(unsigned short font_id, unsigned int fgcolor, unsigned int bgcol
     switch(text_encoding) {
       default:
       case BAGL_ENCODING_LATIN1:
-        ch = *((unsigned char*)text);
+        ch = *((unsigned char*)text); 
+        if (ch != ' '){
+        	ch-=0x20; //uppercase
+        }
         text = (void*)(((unsigned char*)text)+1);
         break;
     }
@@ -528,7 +429,7 @@ int draw_string(unsigned short font_id, unsigned int fgcolor, unsigned int bgcol
       draw_bitmap_within_rect(xx, ch_y, ch_width, ch_height, (1<<font->bpp), colors, font->bpp, ch_bitmap, font->bpp*ch_width*ch_height); // note, last parameter is computable could be avoided
     }
     else {
-      draw_rect(bgcolor, xx, ch_y, ch_width, ch_height);
+      //draw_rect(bgcolor, xx, ch_y, ch_width, ch_height);
     }
     // prepare for next char
     xx += ch_width + ch_kerning;
@@ -537,113 +438,78 @@ int draw_string(unsigned short font_id, unsigned int fgcolor, unsigned int bgcol
   // return newest position, for upcoming printf
   return (y<<16)|(xx&0xFFFF);
 }
+#define MAX_CHAR	21
+
+uint8_t getNextLineIdx(char *words){
+	uint8_t numChar, numCharInt, offset;
+	numCharInt = 0;
+	while (*words++!='\0'){
+		numCharInt++;
+		if (*words==' '){
+			numChar = numCharInt;
+		}
+		if (numCharInt > MAX_CHAR){
+			return numChar + 1;
+		}
+	}
+	return numCharInt;
+}
+
+#define SEED_SIZE 160
 
 void write_words(void){
-	//memset(revealer_image, 0xFF, sizeof(revealer_image));
-	char  text[30];
-	SPRINTF(text, "BASKET BASKET BASKET ");
+	char  text[SEED_SIZE];
+	char  text_display[MAX_CHAR];
+	//test words
+	//SPRINTF(text, "TRAFFIC POWDER RURAL WISH BLESS BEGIN TEXT PYRAMID SECOND FEED ANOTHER PANEL WRECK WOMAN DUTCH CHAIR REMOVE ERUPT PROPERTY BURGER AUTHOR FANTASY TWIST RANDOM");
+	strcpy(text,G_bolos_ux_context.words_buffer);
 	int bgcolor = 0x000000;
 	int fgcolor = 0xFFFFFF;
-	/*unsigned char ch_height = 0;
-    unsigned char ch_kerning = 0;
-    unsigned char ch_width = 0;
-    const unsigned char * ch_bitmap = NULL;
-    unsigned int colors[16];
-  	colors[0] = 0xFFFFFF;
-  	colors[1] = 0x000000;
-    
 
-	const bagl_font_t *font = &fontFONT_11PX;
-	unsigned int ch = 0;
-	ch = *((unsigned char*)text);
-	ch -= font->first_char;
-    ch_bitmap = &font->bitmap[font->characters[ch].bitmap_offset];
-    ch_width = font->characters[ch].char_width;
-    ch_kerning = font->char_kerning;
-    ch_height = font->char_height;
-*/
-    //screen_printf("%s", "toto");
+	uint8_t nextLineIdx, curLineIdx;
 
 	screen_clear();
-	//draw_bitmap_within_rect(0, 0, ch_width, ch_height, (1<<font->bpp), colors, font->bpp, ch_bitmap, font->bpp*ch_width*ch_height);
-	//draw_bitmap_within_rect(0+ch_width, 0, ch_width, ch_height, (1<<font->bpp), colors, font->bpp, ch_bitmap, font->bpp*ch_width*ch_height);
-	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  0, IMG_WIDTH, IMG_HEIGHT, text, 21, BAGL_ENCODING_LATIN1);
-	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0, 12, IMG_WIDTH, IMG_HEIGHT, text, 21, BAGL_ENCODING_LATIN1);
-	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0, 24, IMG_WIDTH, IMG_HEIGHT, text, 21, BAGL_ENCODING_LATIN1);
-	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0, 36, IMG_WIDTH, IMG_HEIGHT, text, 21, BAGL_ENCODING_LATIN1);
-	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0, 48, IMG_WIDTH, IMG_HEIGHT, text, 21, BAGL_ENCODING_LATIN1);
-	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0, 60, IMG_WIDTH, IMG_HEIGHT, text, 21, BAGL_ENCODING_LATIN1);
-	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0, 72, IMG_WIDTH, IMG_HEIGHT, text, 21, BAGL_ENCODING_LATIN1);
-	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0, 84, IMG_WIDTH, IMG_HEIGHT, text, 21, BAGL_ENCODING_LATIN1);
-	//draw_string(BAGL_FONT_FONT_11PX, 0xFFFFFF, 0x000000, 0, 12, IMG_WIDTH, IMG_HEIGHT, text, 21, BAGL_ENCODING_LATIN1);
-	/*screen_changed = 0;
-	//SPRINTF(string, "ABOUT ABOUT ABOUT ");
-	draw_string(BAGL_FONT_FONT_11PX, 0xFFFFFF, 0x000000, 0, 12, IMG_WIDTH, IMG_HEIGHT, text, 21, BAGL_ENCODING_LATIN1);
-	screen_changed = 0;
-	//SPRINTF(string, "BASKET BASKET ");
-	draw_string(BAGL_FONT_FONT_11PX, 0xFFFFFF, 0x000000, 0, 24, IMG_WIDTH, IMG_HEIGHT, text, 21, BAGL_ENCODING_LATIN1);
-	screen_changed = 0;*/
-	//draw_string(BAGL_FONT_FONT_11PX, 0xFFFFFF, 0x000000, 0, 12, IMG_WIDTH, IMG_HEIGHT-12, "ABOUT ABOUT ", 12, BAGL_ENCODING_LATIN1);
-	//draw_string(BAGL_FONT_FONT_11PX, 0xFFFFFF, 0x000000, 0, 12+12, IMG_WIDTH, IMG_HEIGHT-12-12, "BASKET BASKET ", 14, BAGL_ENCODING_LATIN1);
-	//draw_string(BAGL_FONT_FONT_11PX, 0xFFFFFF, 0x000000, 0, 12+12, IMG_WIDTH, IMG_HEIGHT-12-12, "BASKET BASKET ", 14, BAGL_ENCODING_LATIN1); 
-	/*unsigned int colors[16];
-  	colors[0] = 0x000000;
-  	colors[1] = 0xFFFFFF;
 
-	  //const bagl_font_t *font = bagl_get_font(font_id);
-	  const bagl_font_t *font = &fontFONT_11PX;
+	curLineIdx = 0;
+	nextLineIdx = getNextLineIdx(text);
+	memcpy(text_display, &text[curLineIdx], nextLineIdx);
+	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  0, IMG_WIDTH, IMG_HEIGHT, text_display, nextLineIdx, BAGL_ENCODING_LATIN1);
+	strcpy(text, &text[nextLineIdx]);
 
+	nextLineIdx = getNextLineIdx(text);
+	memcpy(text_display, text, nextLineIdx);
+	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  12, IMG_WIDTH, IMG_HEIGHT, text_display, nextLineIdx, BAGL_ENCODING_LATIN1);
+	strcpy(text, &text[nextLineIdx]);
 
-	  if (font->bpp > 1) {
-	    // fgcolor = 0x7e7ecc
-	    // bgcolor = 0xeca529
-	    // $1 = {0xeca529, 0xc6985f, 0xa28b95, 0x7e7ecc}
+	nextLineIdx = getNextLineIdx(text);
+	memcpy(text_display, text, nextLineIdx);
+	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  24, IMG_WIDTH, IMG_HEIGHT, text_display, nextLineIdx, BAGL_ENCODING_LATIN1);
+	strcpy(text, &text[nextLineIdx]);
 
-	    int color_count = 1<<(font->bpp);
+	nextLineIdx = getNextLineIdx(text);
+	memcpy(text_display, text, nextLineIdx);
+	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  36, IMG_WIDTH, IMG_HEIGHT, text_display, nextLineIdx, BAGL_ENCODING_LATIN1);
+	strcpy(text, &text[nextLineIdx]);
 
-	    memset(colors, 0, sizeof(colors));
-	    colors[0] = 0x000000;
-	    colors[color_count-1] = 0xFFFFFF;
+	nextLineIdx = getNextLineIdx(text);
+	memcpy(text_display, text, nextLineIdx);
+	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  48, IMG_WIDTH, IMG_HEIGHT, text_display, nextLineIdx, BAGL_ENCODING_LATIN1);
+	strcpy(text, &text[nextLineIdx]);
 
-	    // compute for all base colors
-	    int off;
-	    for (off = 0; off < 3; off++) {
+	nextLineIdx = getNextLineIdx(text);
+	memcpy(text_display, text, nextLineIdx);
+	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  60, IMG_WIDTH, IMG_HEIGHT, text_display, nextLineIdx, BAGL_ENCODING_LATIN1);
+	strcpy(text, &text[nextLineIdx]);
 
-	      int cfg = (0xFFFFFF>>(off*8))&0xFF;
-	      int cbg = (0x000000>>(off*8))&0xFF;
+	nextLineIdx = getNextLineIdx(text);
+	memcpy(text_display, text, nextLineIdx);
+	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  72, IMG_WIDTH, IMG_HEIGHT, text_display, nextLineIdx, BAGL_ENCODING_LATIN1);
+	strcpy(text, &text[nextLineIdx]);
 
-	      int crange = MAX(cfg,cbg)-MIN(cfg,cbg)+1;
-	      int cinc = crange/(color_count-1UL);
-
-	      if (cfg > cbg) {
-	        int i;
-	        for (i=1; i < color_count-1UL; i++) {
-	          colors[i] |= MIN(0xFF, cbg+i*cinc)<<(off*8);
-	        }
-	      }
-	      else {
-	        int i;
-
-	        for (i=1; i < color_count-1UL; i++) {
-	          colors[i] |= MIN(0xFF, cfg+(color_count-1-i)*cinc)<<(off*8);
-	        }
-	      }
-	    }
-	  }
-	int ch = 0;
-	ch = 'A';
-	unsigned char ch_height = 0;
-    unsigned char ch_kerning = 0;
-    unsigned char ch_width = 0;
-    const unsigned char * ch_bitmap = NULL;
-    int ch_y = 12;
-    ch -= font->first_char;
-    ch_bitmap = &font->bitmap[font->characters[ch].bitmap_offset];
-    ch_width = font->characters[ch].char_width;
-    ch_kerning = font->char_kerning;
-    ch_height = font->char_height;
-	draw_bitmap_within_rect(0, ch_y, ch_width, ch_height, (1<<font->bpp), colors, font->bpp, ch_bitmap, font->bpp*ch_width*ch_height);*/
-	//THROW(0x6FFD);
+	nextLineIdx = getNextLineIdx(text);
+	memcpy(text_display, text, nextLineIdx);
+	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  84, IMG_WIDTH, IMG_HEIGHT, text_display, nextLineIdx, BAGL_ENCODING_LATIN1);
+	strcpy(text, &text[nextLineIdx]);
 }
 
 int send_column(int x){

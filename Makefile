@@ -16,14 +16,17 @@
 #*******************************************************************************
 
 ifeq ($(BOLOS_SDK),)
-$(error BOLOS_SDK is not set)
+$(error Environment variable BOLOS_SDK is not set)
 endif
 include $(BOLOS_SDK)/Makefile.defines
+
+all: default
 
 # Main app configuration
 
 APPNAME = "Revealer"
 APPVERSION = 1.0.0
+ICONNAME = icon.gif
 APP_LOAD_PARAMS = --appFlags 0x10 $(COMMON_LOAD_PARAMS) --apdu --curve secp256k1 --path ""
 
 # Build configuration
@@ -35,8 +38,8 @@ DEFINES += APPVERSION=\"$(APPVERSION)\"
 
 DEFINES += OS_IO_SEPROXYHAL IO_SEPROXYHAL_BUFFER_SIZE_B=128
 DEFINES += HAVE_BAGL HAVE_SPRINTF
-#DEFINES += PRINTF\(...\)=
-DEFINES   += HAVE_PRINTF PRINTF=screen_printf
+DEFINES += PRINTF\(...\)=
+#DEFINES   += HAVE_PRINTF PRINTF=screen_printf
 DEFINES   += BOLOS_APP_ICON_SIZE_B=\(9+32\)
 DEFINES   += CX_COMPLIANCE_141
 DEFINES   += HAVE_ELECTRUM
@@ -87,16 +90,6 @@ all: default
 MAKEFLAGS += -r
 
 SHELL =       /bin/bash
-#.ONESHELL:
-
-
-#GLYPH_FILES := $(addprefix glyphs/,$(sort $(notdir $(shell find glyphs/))))
-#GLYPH_DESTC := src/glyphs.c
-#GLYPH_DESTH := src/glyphs.h
-#$(GLYPH_DESTC) $(GLYPH_DESTH): $(GLYPH_FILES) $(BOLOS_SDK)/icon.py#
-#	-rm $@
-#	for gif in $(GLYPH_FILES) ; do python $(BOLOS_SDK)/icon.py $$gif glyphcheader ; done > $(GLYPH_DESTH)
-#	for gif in $(GLYPH_FILES) ; do python $(BOLOS_SDK)/icon.py $$gif glyphcfile ; done > $(GLYPH_DESTC)
 
 load: all
 	python -m ledgerblue.loadApp $(APP_LOAD_PARAMS)

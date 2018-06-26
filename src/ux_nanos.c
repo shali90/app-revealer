@@ -39,7 +39,7 @@ const ux_menu_entry_t ui_idle_mainmenu_nanos_words_seed_valid[] = {
 };
 
 const ux_menu_entry_t ui_idle_mainmenu_nanos_all_valid[] = {
-  {NULL, NULL, 0, NULL, "Start Python", "script", 32, 10},
+  {NULL, NULL, 0, NULL, "Ready to", "Reveal <3", 32, 10},
   {menu_about_nanos, NULL, 0, NULL, "About", NULL, 0, 0},
   {NULL, os_sched_exit, 0, &C_icon_dashboard, "Quit app", NULL, 50, 29},
   UX_MENU_END
@@ -295,7 +295,7 @@ const bagl_element_t ui_type_noise_seed_nanos[] = {
     0, 0, 
     NULL, NULL, NULL },*/
   { {BAGL_LABELINE,   0x01,    0,   12, 128,  32,    0,    0,         0,   0xFFFFFF, 0x000000,    BAGL_FONT_OPEN_SANS_REGULAR_11px|BAGL_FONT_ALIGNMENT_CENTER, 0  }, 
-    "a b A B",  
+    "Enter revealer code",  
     0, 
     0, 0, 
     NULL, NULL, NULL },
@@ -396,7 +396,6 @@ void revealer_struct_init(void){
   os_memset(G_revealer.noise_seed_display, '\0', 17);
   os_memset(G_revealer.string_buffer, '\0', 20);
   os_memset(G_revealer.key, 0x00 ,4*KEY_LEN);
-  //os_memset(G_revealer.key_len, 0x00 , 1);
   G_revealer.first_display = 1;
   G_revealer.typedDigitLen = 0;
   G_revealer.offset = 7;

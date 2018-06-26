@@ -1,20 +1,9 @@
 from ledgerblue.comm import getDongle
-from ledgerblue.deployed import getDeployedSecretV2
-from ledgerblue.ecWrapper import PrivateKey
-from Crypto.Cipher import AES
-import sys
-import fileinput
 import binascii
-from ledgerblue.hexLoader import HexLoader
-
-from hashlib import sha256
-import random
 
 from electrum_gui.qt.util import *
-from PyQt5.QtGui import QImage, QBitmap
-import array
-
-import time
+from PyQt5.QtGui import QImage
+from PyQt5.QtPrintSupport import QPrinter
 
 
 def auto_int(x):
@@ -32,80 +21,32 @@ device. The file must be formatted as hex, with one CAPDU per line.""")
     parser.add_argument("--targetId", help="The device's target ID (default is Ledger Nano S)", type=auto_int)
     return parser
 
-CHUNK_SIZE = 250
+def toPdf(image):
+    printer = QPrinter()
+    printer.setPaperSize(QSizeF(210, 297), QPrinter.Millimeter)
+    printer.setResolution(600)
+    printer.setOutputFormat(QPrinter.PdfFormat)
+    printer.setOutputFileName(os.getcwd() + '/test.pdf')
+    printer.setPageMargins(0, 0, 0, 0, 6)
+    painter = QPainter()
+    painter.begin(printer)
 
-def update_image_byte(img,b, bnum, chunk, x,y):
-    white = qRgba(255, 255, 255, 0)
-    black = qRgba(0, 0, 0, 255)
-    #y_int = y
-    x_int = bnum * 8 + x
-    if y == 13:
-        a = 0
-    if x_int >= img.width():
-        y = int(x_int/img.width())
-        x_int = x_int % img.width()
-    for i in range(8):
-        if x_int == img.width():
-            y+=1
-            #x_int = (x_int+i)%img.width()
-            x_int = 0
-        if (b>>i)&1 == 0:
-            img.setPixel(x_int,y,black)
-        elif (b>>i)&1 == 1:
-            img.setPixel(x_int,y,white)
-        if y == 13:
-            a = 10
-        print(x_int,y)
-        x_int += 1
-    return img
+    delta_h = round(image.width() / 34)
+    delta_v = round(image.height() / 21)
 
-def update_image_chunk(img, bytes, chunk, last=False):
-    #one chunk is 250*8 pixels = 2000 pixels
-    pixel_idx = chunk*CHUNK_SIZE*8
-    bnum = 0
-    for byte in bytes:
-        update_image_byte(img, byte, bnum, chunk, pixel_idx%img.width(), int(pixel_idx/img.width()))
-        bnum += 1
-    return img
+    size_h = 2028 + ((int(1) * 2028 / (2028 - (delta_h * 2) + int(1))) / 2)
+    size_v = 1284 + ((int(1) * 1284 / (1284 - (delta_v * 2) + int(1))) / 2)
 
-def blank(img):
-    white = qRgba(255, 255, 255, 0)
-    black = qRgba(0, 0, 0, 255)
-    for i in range(img.width()):
-        for j in range(img.height()):
-            #print(i, j)
-            img.setPixel(i,j,white)
-    return img
+    image = image.scaled(size_h, size_v)
 
-def update_image_byte2(img):
-    return img
+    painter.drawImage(553, 533, image)
+    wpath = QPainterPath()
+    wpath.addRoundedRect(QRectF(553, 533, size_h, size_v), 19, 19)
+    painter.setPen(QPen(Qt.black, 1))
+    painter.drawPath(wpath)
+    painter.end()
+    return image
 
-def update_image_chunk2(img, bytes):
-    white = qRgba(255, 255, 255, 0)
-    black = qRgba(0, 0, 0, 255)
-    x = int(img.px_cnt / img.height())
-    y = img.px_cnt % img.height()
-    #x = img.px_cnt % img.width()
-    #y = int(img.px_cnt / img.width())
-    if img.px_cnt == 0:
-        x = 0
-        y = 0
-    for b in bytes:
-        for i in range(8):
-            #if img.px_cnt >= 15423:
-            if img.px_cnt >= 80*20:
-                return img
-            #print(x,y)
-            if (b >>i) & 1 == 0:
-                img.setPixel(x, y, black)
-            elif (b >>i) & 1 == 1:
-                img.setPixel(x, y, white)
-            img.px_cnt += 1
-            x = int(img.px_cnt/img.height())
-            y = img.px_cnt%img.height()
-            #x = img.px_cnt % img.width()
-            #y = int(img.px_cnt / img.width())
-    return img
 
 def pixelcode_2x2(img):
     result = QImage(img.width() * 2, img.height() * 2, QImage.Format_ARGB32)
@@ -128,62 +69,6 @@ def pixelcode_2x2(img):
                 result.setPixel(x * 2, y * 2, white)
     return result
 
-def write_pixels(img, b, x, y):
-    white = qRgba(255, 255, 255, 0)
-    black = qRgba(0, 0, 0, 255)
-    for i in range(8):
-        print(x+i, y)
-        if (b >> 7-i) & 1 == 0:
-            img.setPixel(x+i, y, black)
-            #img.setPixel(y, x + i, white)
-        if (b >> 7-i) & 1 == 1:
-            img.setPixel(x+i, y, white)
-            #img.setPixel(y, x + i, black)
-        img.YX += 1
-    return img
-
-def write_pixels2(img, b, x, y):
-    white = qRgba(255, 255, 255, 0)
-    black = qRgba(0, 0, 0, 255)
-    for i in range(8):
-        print(x, y+i)
-        if (b >> i) & 1 == 0:
-            img.setPixel(x, y+i, black)
-            #img.setPixel(y, x + i, white)
-        if (b >> i) & 1 == 1:
-            img.setPixel(x, y+i, white)
-            #img.setPixel(y, x + i, black)
-        img.YX += 1
-    return img
-
-
-def makeImage(img, bytes):
-    for y in range(int(img.height())):
-        for x in range(int(img.width()/8)):
-            bytenum = x*img.height() + y
-            print("bytenum = %d x = %d y = %d" %(bytenum, x, y))
-            write_pixels(img, bytes[bytenum], x*8, y)
-            if img.YX >= img.width()*img.height():
-                img.save(os.getcwd() + '/test1.png')
-                return img
-            img.save(os.getcwd() + '/test1.png')
-            #time.sleep(0.3)
-    return img
-
-def makeImage2(img, bytes):
-    for y in range(int(img.height()/8)):
-        for x in range(int(img.width())):
-            bytenum = y*img.width() + x
-            print("bytenum = %d x = %d y = %d" %(bytenum, x, y))
-            write_pixels2(img, bytes[bytenum], x, y*8)
-            if img.YX >= img.width()*img.height():
-                img.save(os.getcwd() + '/test2.png')
-                return img
-            img.save(os.getcwd() + '/test2.png')
-        img.save(os.getcwd() + '/test2.png')
-            #time.sleep(0.3)
-    return img
-
 def updateColumn(img, b, x, refresh = False):
     print(x)
     white = qRgba(255, 255, 255, 0)
@@ -198,85 +83,29 @@ def updateColumn(img, b, x, refresh = False):
     return img
 
 img = QImage(159,97, QImage.Format_ARGB32)
-#bitmap = QBitmap.fromImage(img, Qt.MonoOnly)
-#bitmap.fill(Qt.white)
-#painter = QPainter()
-#painter.begin(bitmap)
-#painter.end()
-#img = bitmap.toImage()
-
-#img.setPixel(x,y,random.randint(0, 1))
-img = blank(img)
 
 img.YX = 0
 
-if 1:
-    args = get_argparser().parse_args()
-    dongle = getDongle(args.apdu)
-    data = binascii.unhexlify("80CA000000")
-    result = dongle.exchange(bytearray(data))
+args = get_argparser().parse_args()
+dongle = getDongle(args.apdu)
+data = binascii.unhexlify("80CA000000")
+result = dongle.exchange(bytearray(data))
 
+if args.apdu:
+    print("<= Clear " + str(result))
+
+for i in range(img.width()):
+    data = binascii.unhexlify("80CB00" + "0x{:02x}".format(i)[2:] + "00")
+    print(data)
+    result = dongle.exchange(bytearray(data))
+    updateColumn(img,result,i, True)
     if args.apdu:
         print("<= Clear " + str(result))
+img.save(os.getcwd() + '/column.png')
+img = pixelcode_2x2(img)
+#img = img.convertToFormat(QImage.Format_Mono)
+#img = QBitmap.fromImage(img)
+#img = toPdf(QImage(img))
+#QDesktopServices.openUrl (QUrl.fromLocalFile(os.getcwd() +'/test.pdf'))
+img.save(os.getcwd() + '/cypher.png')
 
-    for i in range(img.width()):
-        data = binascii.unhexlify("80CB00" + "0x{:02x}".format(i)[2:] + "00")
-        print(data)
-        result = dongle.exchange(bytearray(data))
-        updateColumn(img,result,i, True)
-        if args.apdu:
-            print("<= Clear " + str(result))
-    img.save(os.getcwd() + '/column.png')
-
-
-if 0:
-    data = [0]*250
-
-    for i in range(8):
-        update_image_chunk2(img,data)
-
-    img.save(os.getcwd()+'/test.png')
-
-    img = img.convertToFormat(QImage.Format_Mono)
-    img = pixelcode_2x2(img)
-
-    img.save(os.getcwd()+'/cypherseed.png')
-if 0:
-    args = get_argparser().parse_args()
-    dongle = getDongle(args.apdu)
-
-    data = binascii.unhexlify("80CA000000")
-    result = dongle.exchange(bytearray(data))
-
-    if args.apdu:
-        print("<= Clear " + str(result))
-    #img = update_image_chunk2(img, result)
-    #img = makeImage2(img, result)
-    if 1:
-        for i in range(7):
-            data = binascii.unhexlify("80CB000"+str(i+1)+"00")
-            result += dongle.exchange(bytearray(data))
-            if args.apdu:
-                print("<= Clear " + str(result))
-        img = makeImage2(img, result)
-        #img.save('/home/philippe/Nano S projects/bolos-app-revealer/test1.png')
-        img = img.convertToFormat(QImage.Format_Mono)
-        img = pixelcode_2x2(img)
-    img.save(os.getcwd()+'/cypherseed1.png')
-
-
-if 0:
-    result = []
-    args = get_argparser().parse_args()
-    dongle = getDongle(args.apdu)
-
-    for i in range(4):
-        data = binascii.unhexlify("80CA000000")
-        result += dongle.exchange(bytearray(data))
-        if args.apdu:
-            print("<= Clear " + str(result))
-        data = binascii.unhexlify("80CB000100")
-        result += dongle.exchange(bytearray(data))
-        if args.apdu:
-            print("<= Clear " + str(result))
-    img = makeImage2(img, result)
