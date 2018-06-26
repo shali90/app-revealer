@@ -30,11 +30,9 @@ static unsigned int current_text_pos; // parsing cursor in the text to display
 static unsigned int text_y;           // current location of the displayed text
 
 ux_revealer G_revealer;
-//prng G_prng;
 
 // UI currently displayed
 extern enum UI_STATE { UI_IDLE, UI_TEXT, UI_APPROVAL };
-
 extern enum UI_STATE uiState;
 
 ux_state_t ux;
@@ -72,29 +70,6 @@ unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len) {
     return 0;
 }
 
-/*const bagl_element_t elem[]={
-    {{BAGL_LABELINE, 0x00, 0, 0, WIDTH, HEIGHT, 0, 0, 0, 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_REGULAR_11px | BAGL_FONT_ALIGNMENT_CENTER , 0},
-                    "abandon abandon",
-                    0,
-                    0,
-                    0,
-                    NULL,
-                    NULL,
-                    NULL}
-};
-
-uint8_t a[9][9] = {
-{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,},
-{0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x00,},
-{0x00,0x00,0x00,0x01,0x01,0x01,0x00,0x00,0x00,},
-{0x00,0x00,0x01,0x01,0x00,0x01,0x01,0x00,0x00,},
-{0x00,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x00,},
-{0x01,0x01,0x00,0x00,0x00,0x00,0x00,0x01,0x01,},
-{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,},
-{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,},
-{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,},
-};*/
-
 static void sample_main(void) {
 
     // next timer callback in 500 ms
@@ -104,10 +79,6 @@ static void sample_main(void) {
     uint8_t flags;
     revealer_struct_init();
     uint8_t chunk_nb;
-    //os_memset(words_image, 0x00, 1928);
-    //os_memset(noise_image, 0x00, 1928);
-    //os_memset(noise_frame, 0x00, 20);
-    //os_memset(revealer_frame, 0x00, 20);
     for (;;) {
     volatile unsigned short sw = 0;
 
@@ -128,75 +99,28 @@ static void sample_main(void) {
         }
 
         switch (G_io_apdu_buffer[1]) {
-        //Image :
-        //  - width  = 159
-        //  - height = 97
-        //  - pixels = 159*97 = 15423
-        //  - 8 pixels are encoded in one byte
-        //bit      7  6  5  4  3  2  1  0
-        //pixel   p7 p6 p5 p4 p3 p2 p1 p0
-
-        //frame = 20 byte = 19 * 8 pixels + 7 pixels
-
-            /*#define NOISE_SEED_NOT_SET  0x6FF0
-            #define SEED_WORDS_NOT_SET  0x6FF1
-            #define BOTH_SEEDS_UNSET    0x6FF2*/  
             case 0xCA: // Start generating revealer
-                //flags |= IO_ASYNCH_REPLY;
-                /*if ((G_revealer.noise_seed_valid == 1)&&(G_revealer.words_seed_valid == 1)){ //Noise seed and seed words OK => generate revealer
+                if ((G_revealer.words_seed_valid)&&(G_revealer.noise_seed_valid)){
                     noiseSeedToKey();
-                    //tx += 33;
-                    THROW(SW_OK);
-                }
-                else if ((G_revealer.noise_seed_valid == 1)&&(G_revealer.words_seed_valid == 0)){ //Seed words not set
-                    THROW(SEED_WORDS_NOT_SET); 
-                }
-                else if ((G_revealer.noise_seed_valid == 0)&&(G_revealer.words_seed_valid == 1)){
-                    THROW(NOISE_SEED_NOT_SET);
-                }
-                else{*/
-                    //THROW(BOTH_SEEDS_UNSET);   //TODO uncomment and remove whats next
-                    noiseSeedToKey();
-                    //init_prng(19650218);
-                    init_by_array(4);
-                    
-                    /*uint8_t noise_frame[WIDTH];
-                    for (int i=0; i<WIDTH; i++){
-                        noise_frame[i] = random_getrandbits(2);
-
-                        G_io_apdu_buffer[i] = noise_frame[i];
-                    }
-                    tx += 159;*/
-
-                    //write_words();
-                    //THROW(0x6FFF);
-                    //write_noise();
+                    init_by_array(4);                    
                     write_words();
-                    //tx += send_img_chunk(0);
-                    //tx += send_words(0);
-                    //tx += send_img_chunk(0);
-
-                    /*for (int i=0; i<CHUNK_SIZE; i++){
-                        G_io_apdu_buffer[i] = random_getrandbits(2);
-                    }
-                    tx += CHUNK_SIZE;*/                    
-                    //uint8_t nb_letters = get_words();
-
+                    THROW(SW_OK);                        
+                }
+                else {
+                    THROW(BOTH_SEEDS_UNSET);
+                }
+                break;
+            case 0xCB: // Send img row chunk
+                if ((G_revealer.words_seed_valid)&&(G_revealer.noise_seed_valid)){               
+                    chunk_nb = G_io_apdu_buffer[3];
+                    tx += send_column(chunk_nb);
                     THROW(SW_OK);
-                //}
+                }
+                else {
+                    THROW(BOTH_SEEDS_UNSET);
+                }
                 break;
-            case 0xCB:                
-                chunk_nb = G_io_apdu_buffer[3];
-                //tx += send_img_chunk(chunk_nb);
-                tx += send_column(chunk_nb);
-                //tx += send_img_chunk(chunk_nb);
-
-                THROW(SW_OK);
-                break;
-            case 0xCC:
-                THROW(SW_OK);
-                break;
-          default:
+            default:
             THROW(0x6D00);
             break;
         }
@@ -205,13 +129,9 @@ static void sample_main(void) {
         switch(e & 0xF000) {
           case 0x6000:
             sw = e;
-            tx += 1;
-            //G_io_apdu_buffer[0]=01;
-            //tx += send_img_chunk(0);                       
             break;
           case SW_OK:
             sw = e;
-            //tx += send_img_chunk(0); 
             break;
           default:
             sw = 0x6800 | (e&0x7FF);
@@ -223,7 +143,6 @@ static void sample_main(void) {
         tx += 2;
         io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, tx);
         flags |= IO_ASYNCH_REPLY;
-        //ui_idle_init();
       }
       FINALLY {
       }
@@ -329,14 +248,6 @@ __attribute__((section(".boot"))) int main(void) {
     uint8_t i, j, x, y;
     x = 0; y = 0;
 
-    /*for (i=0; i<HEIGHT; i++){
-        for (j=0; j<WIDTH; j++){
-            words_frame[j][i] = a[x][y];
-            if(x==8){x=0;}
-            if(y==8){y=0;}
-        }
-    }*/
-    
     // ensure exception will work as planned
     os_boot();
 
