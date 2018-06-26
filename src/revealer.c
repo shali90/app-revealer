@@ -199,34 +199,10 @@ uint8_t get_words(void){
     }
     return i;
 }
-
-int write_noise(void){
-	uint8_t val;
-	val = 0;
-	for (int i=0; i<IMG_SIZE; i++){
-		for(uint8_t j=0; j<8; j++){
-			val |= random_getrandbits(2)<<j;
-		}
-		nvm_write(&N_storage.noise_img[i], (uint8_t *)&val, sizeof(uint8_t));	
-		val = 0;
-	}
-	return IMG_SIZE;
-}
-
-int send_img_chunk(int chunk_nb){
-	int idx = chunk_nb * CHUNK_SIZE;
-	//os_memcpy(G_io_apdu_buffer, &N_storage.words_img[idx], 250);
-	os_memcpy(G_io_apdu_buffer, &N_storage.noise_img[idx], CHUNK_SIZE);
-	//os_memcpy(G_io_apdu_buffer, &N_storage.screen_framebuffer[idx], CHUNK_SIZE);
-	return CHUNK_SIZE;
-}
-
 #include "font.h"
 
-/*#define IMG_WIDTH  80
-#define IMG_HEIGHT 20
 
-char screen_framebuffer[(IMG_WIDTH*IMG_HEIGHT)/8];*/
+// Above code is adapted from Nano S MCU screen HAL driver, screen is replaced by an image matrix stored in nvram cf revealer.h
 unsigned int screen_changed; // to avoid screen update for nothing
 
 int screen_draw_x;
@@ -241,15 +217,15 @@ unsigned int* screen_draw_colors;
 void screen_clear(void) {
   char val;
   val = 0x00;
-  //memset(screen_framebuffer, 0, sizeof(screen_framebuffer)); 
+  //memset(revealer_image, 0, sizeof(revealer_image)); 
   for (int i=0; i<(IMG_WIDTH*IMG_HEIGHT)/8; i++){
-  	nvm_write(&N_storage.screen_framebuffer[i], (char *)&val, sizeof(char));  	
+  	nvm_write(&N_storage.revealer_image[i], (char *)&val, sizeof(char));  	
   }
   screen_changed = 1;
 }
 
 
-void bagl_hal_draw_bitmap_within_rect_internal(unsigned int bit_per_pixel, const unsigned char* bitmap, unsigned int bitmap_length_bits) {
+void draw_bitmap_within_rect_internal(unsigned int bit_per_pixel, const unsigned char* bitmap, unsigned int bitmap_length_bits) {
   unsigned int i;
   int xx;  
   //unsigned int pixel_mask = (1<<bit_per_pixel)-1;
@@ -283,14 +259,14 @@ void bagl_hal_draw_bitmap_within_rect_internal(unsigned int bit_per_pixel, const
       // 1      [1]=1               1
       // 
       if (y>=0 && xx>=0) { // else we're out of screen
-        val = N_storage.screen_framebuffer[YX];
+        val = N_storage.revealer_image[YX];
     	if (colors[((ch>>i) & pixel_mask)] != 0) {
           val |= Ybitmask;
         }
         else {
           val &= ~Ybitmask;
         }
-        nvm_write(&N_storage.screen_framebuffer[YX], (char*)&val, sizeof(char));
+        nvm_write(&N_storage.revealer_image[YX], (char*)&val, sizeof(char));
       }
 
 
@@ -322,7 +298,7 @@ end:
   return;
 }
 
-void bagl_hal_draw_bitmap_within_rect(int x, int y, unsigned int width, unsigned int height, unsigned int color_count, const unsigned int *colors, unsigned int bit_per_pixel, const unsigned char* bitmap, unsigned int bitmap_length_bits) {
+void draw_bitmap_within_rect(int x, int y, unsigned int width, unsigned int height, unsigned int color_count, const unsigned int *colors, unsigned int bit_per_pixel, const unsigned char* bitmap, unsigned int bitmap_length_bits) {
   // horizontal scan
   if (x>= IMG_WIDTH || y >= IMG_HEIGHT) {
     return;
@@ -350,15 +326,15 @@ void bagl_hal_draw_bitmap_within_rect(int x, int y, unsigned int width, unsigned
   screen_draw_Ybitmask = Ybitmask;
   screen_draw_colors = colors;
 
-  bagl_hal_draw_bitmap_within_rect_internal(bit_per_pixel, bitmap, bitmap_length_bits);
+  draw_bitmap_within_rect_internal(bit_per_pixel, bitmap, bitmap_length_bits);
 }
 
-void bagl_hal_draw_bitmap_continue(unsigned int bit_per_pixel, const unsigned char* bitmap, unsigned int bitmap_length_bits) {
-  bagl_hal_draw_bitmap_within_rect_internal(bit_per_pixel, bitmap, bitmap_length_bits);
+void draw_bitmap_continue(unsigned int bit_per_pixel, const unsigned char* bitmap, unsigned int bitmap_length_bits) {
+  draw_bitmap_within_rect_internal(bit_per_pixel, bitmap, bitmap_length_bits);
 }
 
 // draw a simple rect
-void bagl_hal_draw_rect(unsigned int color, int x, int y, unsigned int width, unsigned int height) {
+void draw_rect(unsigned int color, int x, int y, unsigned int width, unsigned int height) {
   unsigned int i;
 
   if (x+width > IMG_WIDTH || x < 0) {
@@ -378,14 +354,14 @@ void bagl_hal_draw_rect(unsigned int color, int x, int y, unsigned int width, un
   i = width*height;
   while(i--) {
     // 2 colors only
-  	val = N_storage.screen_framebuffer[YX];
+  	val = N_storage.revealer_image[YX];
     if (color) {
       val |= Ybitmask;
     }
     else {
       val &= ~Ybitmask;
     }
-    nvm_write(&N_storage.screen_framebuffer[YX], (char*)&val, sizeof(char));
+    nvm_write(&N_storage.revealer_image[YX], (char*)&val, sizeof(char));
     YX++;
     if (YX >= YXlinemax) {
       y++;
@@ -402,7 +378,7 @@ void bagl_hal_draw_rect(unsigned int color, int x, int y, unsigned int width, un
   }
 }
 
-int bagl_draw_string(unsigned short font_id, unsigned int fgcolor, unsigned int bgcolor, int x, int y, unsigned int width, unsigned int height, const void* text, unsigned int text_length, unsigned char text_encoding) {
+int draw_string(unsigned short font_id, unsigned int fgcolor, unsigned int bgcolor, int x, int y, unsigned int width, unsigned int height, const void* text, unsigned int text_length, unsigned char text_encoding) {
   unsigned int xx;
   unsigned int colors[16];
   colors[0] = bgcolor;
@@ -533,7 +509,6 @@ int bagl_draw_string(unsigned short font_id, unsigned int fgcolor, unsigned int 
       // IGNORED for first line
       if (y + ch_height > height) {
         // we're writing half height of the last line ... probably better to put some dashes
-        THROW(0x6fff);
         return (y<<16)|(xx&0xFFFF);
       }
 
@@ -550,11 +525,10 @@ int bagl_draw_string(unsigned short font_id, unsigned int fgcolor, unsigned int 
 
     // chars are storred LSB to MSB in each char, packed chars. horizontal scan
     if (ch_bitmap) {
-      bagl_hal_draw_bitmap_within_rect(xx, ch_y, ch_width, ch_height, (1<<font->bpp), colors, font->bpp, ch_bitmap, font->bpp*ch_width*ch_height); // note, last parameter is computable could be avoided
+      draw_bitmap_within_rect(xx, ch_y, ch_width, ch_height, (1<<font->bpp), colors, font->bpp, ch_bitmap, font->bpp*ch_width*ch_height); // note, last parameter is computable could be avoided
     }
     else {
-      THROW(0x6FFD);
-      bagl_hal_draw_rect(bgcolor, xx, ch_y, ch_width, ch_height);
+      draw_rect(bgcolor, xx, ch_y, ch_width, ch_height);
     }
     // prepare for next char
     xx += ch_width + ch_kerning;
@@ -565,10 +539,12 @@ int bagl_draw_string(unsigned short font_id, unsigned int fgcolor, unsigned int 
 }
 
 void write_words(void){
-	//memset(screen_framebuffer, 0xFF, sizeof(screen_framebuffer));
+	//memset(revealer_image, 0xFF, sizeof(revealer_image));
 	char  text[30];
 	SPRINTF(text, "BASKET BASKET BASKET ");
-	unsigned char ch_height = 0;
+	int bgcolor = 0x000000;
+	int fgcolor = 0xFFFFFF;
+	/*unsigned char ch_height = 0;
     unsigned char ch_kerning = 0;
     unsigned char ch_width = 0;
     const unsigned char * ch_bitmap = NULL;
@@ -585,21 +561,31 @@ void write_words(void){
     ch_width = font->characters[ch].char_width;
     ch_kerning = font->char_kerning;
     ch_height = font->char_height;
+*/
+    //screen_printf("%s", "toto");
 
 	screen_clear();
-	//bagl_hal_draw_bitmap_within_rect(0, 0, ch_width, ch_height, (1<<font->bpp), colors, font->bpp, ch_bitmap, font->bpp*ch_width*ch_height);
-	bagl_hal_draw_bitmap_within_rect(0+ch_width, 0, ch_width, ch_height, (1<<font->bpp), colors, font->bpp, ch_bitmap, font->bpp*ch_width*ch_height);
-	//bagl_draw_string(BAGL_FONT_FONT_11PX, 0xFFFFFF, 0x000000, 0, 0, IMG_WIDTH, IMG_HEIGHT, text, 21, BAGL_ENCODING_LATIN1);
+	//draw_bitmap_within_rect(0, 0, ch_width, ch_height, (1<<font->bpp), colors, font->bpp, ch_bitmap, font->bpp*ch_width*ch_height);
+	//draw_bitmap_within_rect(0+ch_width, 0, ch_width, ch_height, (1<<font->bpp), colors, font->bpp, ch_bitmap, font->bpp*ch_width*ch_height);
+	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  0, IMG_WIDTH, IMG_HEIGHT, text, 21, BAGL_ENCODING_LATIN1);
+	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0, 12, IMG_WIDTH, IMG_HEIGHT, text, 21, BAGL_ENCODING_LATIN1);
+	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0, 24, IMG_WIDTH, IMG_HEIGHT, text, 21, BAGL_ENCODING_LATIN1);
+	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0, 36, IMG_WIDTH, IMG_HEIGHT, text, 21, BAGL_ENCODING_LATIN1);
+	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0, 48, IMG_WIDTH, IMG_HEIGHT, text, 21, BAGL_ENCODING_LATIN1);
+	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0, 60, IMG_WIDTH, IMG_HEIGHT, text, 21, BAGL_ENCODING_LATIN1);
+	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0, 72, IMG_WIDTH, IMG_HEIGHT, text, 21, BAGL_ENCODING_LATIN1);
+	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0, 84, IMG_WIDTH, IMG_HEIGHT, text, 21, BAGL_ENCODING_LATIN1);
+	//draw_string(BAGL_FONT_FONT_11PX, 0xFFFFFF, 0x000000, 0, 12, IMG_WIDTH, IMG_HEIGHT, text, 21, BAGL_ENCODING_LATIN1);
 	/*screen_changed = 0;
 	//SPRINTF(string, "ABOUT ABOUT ABOUT ");
-	bagl_draw_string(BAGL_FONT_FONT_11PX, 0xFFFFFF, 0x000000, 0, 12, IMG_WIDTH, IMG_HEIGHT, text, 21, BAGL_ENCODING_LATIN1);
+	draw_string(BAGL_FONT_FONT_11PX, 0xFFFFFF, 0x000000, 0, 12, IMG_WIDTH, IMG_HEIGHT, text, 21, BAGL_ENCODING_LATIN1);
 	screen_changed = 0;
 	//SPRINTF(string, "BASKET BASKET ");
-	bagl_draw_string(BAGL_FONT_FONT_11PX, 0xFFFFFF, 0x000000, 0, 24, IMG_WIDTH, IMG_HEIGHT, text, 21, BAGL_ENCODING_LATIN1);
+	draw_string(BAGL_FONT_FONT_11PX, 0xFFFFFF, 0x000000, 0, 24, IMG_WIDTH, IMG_HEIGHT, text, 21, BAGL_ENCODING_LATIN1);
 	screen_changed = 0;*/
-	//bagl_draw_string(BAGL_FONT_FONT_11PX, 0xFFFFFF, 0x000000, 0, 12, IMG_WIDTH, IMG_HEIGHT-12, "ABOUT ABOUT ", 12, BAGL_ENCODING_LATIN1);
-	//bagl_draw_string(BAGL_FONT_FONT_11PX, 0xFFFFFF, 0x000000, 0, 12+12, IMG_WIDTH, IMG_HEIGHT-12-12, "BASKET BASKET ", 14, BAGL_ENCODING_LATIN1);
-	//bagl_draw_string(BAGL_FONT_FONT_11PX, 0xFFFFFF, 0x000000, 0, 12+12, IMG_WIDTH, IMG_HEIGHT-12-12, "BASKET BASKET ", 14, BAGL_ENCODING_LATIN1); 
+	//draw_string(BAGL_FONT_FONT_11PX, 0xFFFFFF, 0x000000, 0, 12, IMG_WIDTH, IMG_HEIGHT-12, "ABOUT ABOUT ", 12, BAGL_ENCODING_LATIN1);
+	//draw_string(BAGL_FONT_FONT_11PX, 0xFFFFFF, 0x000000, 0, 12+12, IMG_WIDTH, IMG_HEIGHT-12-12, "BASKET BASKET ", 14, BAGL_ENCODING_LATIN1);
+	//draw_string(BAGL_FONT_FONT_11PX, 0xFFFFFF, 0x000000, 0, 12+12, IMG_WIDTH, IMG_HEIGHT-12-12, "BASKET BASKET ", 14, BAGL_ENCODING_LATIN1); 
 	/*unsigned int colors[16];
   	colors[0] = 0x000000;
   	colors[1] = 0xFFFFFF;
@@ -656,29 +642,28 @@ void write_words(void){
     ch_width = font->characters[ch].char_width;
     ch_kerning = font->char_kerning;
     ch_height = font->char_height;
-	bagl_hal_draw_bitmap_within_rect(0, ch_y, ch_width, ch_height, (1<<font->bpp), colors, font->bpp, ch_bitmap, font->bpp*ch_width*ch_height);*/
+	draw_bitmap_within_rect(0, ch_y, ch_width, ch_height, (1<<font->bpp), colors, font->bpp, ch_bitmap, font->bpp*ch_width*ch_height);*/
 	//THROW(0x6FFD);
 }
 
-
-int send_words(int chunk){
-	//os_memcpy(G_io_apdu_buffer, &N_storage.words_img[idx], 250);
-	//os_memcpy(G_io_apdu_buffer, screen_framebuffer, (IMG_WIDTH*IMG_HEIGHT)/8);
-	//os_memcpy(G_io_apdu_buffer, &N_storage.screen_framebuffer[chunk*256], 256);
-	os_memcpy(G_io_apdu_buffer, &N_storage.screen_framebuffer[chunk*250], 250);
-	//os_memcpy(G_io_apdu_buffer, N_storage.screen_framebuffer, (IMG_HEIGHT*IMG_WIDTH)/8);
-	//os_memcpy(G_io_apdu_buffer, &N_storage.screen_framebuffer[idx], CHUNK_SIZE);
-	return 250;
-	//return (IMG_HEIGHT*IMG_WIDTH)/8;
-}
-
-int send_img(int y){
-  	unsigned int Ybitmask = 1<<(y%8); 
-  	//unsigned int YXlinemax = YX + IMG_WIDTH;
-	unsigned int YX ; 
-	for(int x=0; x<IMG_HEIGHT; x++){
-		YX= (y/8)*IMG_WIDTH + x;
-		G_io_apdu_buffer[x] = N_storage.screen_framebuffer[YX]&Ybitmask;
+int send_column(int x){
+	int YX;
+	uint8_t idx;
+	idx = 0;
+	uint8_t val;
+	for (int i=0; i<IMG_HEIGHT/8; i++){
+		YX = i*IMG_WIDTH+x;
+		val = N_storage.revealer_image[YX];	
+		for (uint8_t j=0; j<8; j++){
+			G_io_apdu_buffer[idx] = (val>>j)&1;
+			G_io_apdu_buffer[idx] ^= random_getrandbits(2);
+			idx++;
+			if (idx == IMG_HEIGHT-1){
+				break;
+			}
+		}
 	}
+	G_io_apdu_buffer[IMG_HEIGHT-1] = 0;
+	G_io_apdu_buffer[IMG_HEIGHT-1] ^= random_getrandbits(2);
 	return IMG_HEIGHT;
 }

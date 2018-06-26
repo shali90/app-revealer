@@ -19,6 +19,8 @@ uint8_t get_words(void);
 #define IMG_WIDTH  159
 #define IMG_HEIGHT 97
 
+#define IMG_YX 	   1+(IMG_WIDTH*IMG_HEIGHT)/8
+
 
 
 typedef struct internalStorage_t {
@@ -26,9 +28,9 @@ typedef struct internalStorage_t {
 //     uint32_t magic;
     uint32_t mt[N];	// mersene twister table
     uint32_t index; // mersene twister table index
-    uint8_t  noise_img[IMG_SIZE]; // one byte for 8 pixels
-	char screen_framebuffer[(IMG_WIDTH*IMG_HEIGHT)/8];
-    //char screen_framebuffer[(WIDTH*HEIGHT)/8]; 
+    //uint8_t  noise_img[IMG_SIZE]; // one byte for 8 pixels
+	char revealer_image[IMG_YX];
+    //char revealer_image[(WIDTH*HEIGHT)/8]; 
     //uint8_t  words_img[IMG_SIZE]; // one byte for 8 pixels
 
 	// image is 159*97 = 15423 pixels

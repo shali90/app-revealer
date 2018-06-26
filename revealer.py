@@ -179,8 +179,22 @@ def makeImage2(img, bytes):
             if img.YX >= img.width()*img.height():
                 img.save(os.getcwd() + '/test2.png')
                 return img
+            img.save(os.getcwd() + '/test2.png')
         img.save(os.getcwd() + '/test2.png')
             #time.sleep(0.3)
+    return img
+
+def updateColumn(img, b, x, refresh = False):
+    print(x)
+    white = qRgba(255, 255, 255, 0)
+    black = qRgba(0, 0, 0, 255)
+    for i in range(img.height()):
+        if b[i]==0:
+            img.setPixel(x,i,black)
+        if b[i]==1:
+            img.setPixel(x, i, white)
+    if refresh is True:
+        img.save(os.getcwd() + '/column.png')
     return img
 
 img = QImage(159,97, QImage.Format_ARGB32)
@@ -195,6 +209,26 @@ img = QImage(159,97, QImage.Format_ARGB32)
 img = blank(img)
 
 img.YX = 0
+
+if 1:
+    args = get_argparser().parse_args()
+    dongle = getDongle(args.apdu)
+    data = binascii.unhexlify("80CA000000")
+    result = dongle.exchange(bytearray(data))
+
+    if args.apdu:
+        print("<= Clear " + str(result))
+
+    for i in range(img.width()):
+        data = binascii.unhexlify("80CB00" + "0x{:02x}".format(i)[2:] + "00")
+        print(data)
+        result = dongle.exchange(bytearray(data))
+        updateColumn(img,result,i, True)
+        if args.apdu:
+            print("<= Clear " + str(result))
+    img.save(os.getcwd() + '/column.png')
+
+
 if 0:
     data = [0]*250
 
@@ -207,7 +241,7 @@ if 0:
     img = pixelcode_2x2(img)
 
     img.save(os.getcwd()+'/cypherseed.png')
-if 1:
+if 0:
     args = get_argparser().parse_args()
     dongle = getDongle(args.apdu)
 
@@ -217,8 +251,9 @@ if 1:
     if args.apdu:
         print("<= Clear " + str(result))
     #img = update_image_chunk2(img, result)
+    #img = makeImage2(img, result)
     if 1:
-        for i in range(8):
+        for i in range(7):
             data = binascii.unhexlify("80CB000"+str(i+1)+"00")
             result += dongle.exchange(bytearray(data))
             if args.apdu:
@@ -229,3 +264,19 @@ if 1:
         img = pixelcode_2x2(img)
     img.save(os.getcwd()+'/cypherseed1.png')
 
+
+if 0:
+    result = []
+    args = get_argparser().parse_args()
+    dongle = getDongle(args.apdu)
+
+    for i in range(4):
+        data = binascii.unhexlify("80CA000000")
+        result += dongle.exchange(bytearray(data))
+        if args.apdu:
+            print("<= Clear " + str(result))
+        data = binascii.unhexlify("80CB000100")
+        result += dongle.exchange(bytearray(data))
+        if args.apdu:
+            print("<= Clear " + str(result))
+    img = makeImage2(img, result)

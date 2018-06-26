@@ -103,7 +103,7 @@ static void sample_main(void) {
     volatile unsigned int tx = 0;
     uint8_t flags;
     revealer_struct_init();
-    uint8_t col;
+    uint8_t chunk_nb;
     //os_memset(words_image, 0x00, 1928);
     //os_memset(noise_image, 0x00, 1928);
     //os_memset(noise_frame, 0x00, 20);
@@ -156,9 +156,9 @@ static void sample_main(void) {
                 }
                 else{*/
                     //THROW(BOTH_SEEDS_UNSET);   //TODO uncomment and remove whats next
-                    //noiseSeedToKey();
+                    noiseSeedToKey();
                     //init_prng(19650218);
-                    //init_by_array(4);
+                    init_by_array(4);
                     
                     /*uint8_t noise_frame[WIDTH];
                     for (int i=0; i<WIDTH; i++){
@@ -173,7 +173,8 @@ static void sample_main(void) {
                     //write_noise();
                     write_words();
                     //tx += send_img_chunk(0);
-                    tx += send_words(0);
+                    //tx += send_words(0);
+                    //tx += send_img_chunk(0);
 
                     /*for (int i=0; i<CHUNK_SIZE; i++){
                         G_io_apdu_buffer[i] = random_getrandbits(2);
@@ -185,9 +186,10 @@ static void sample_main(void) {
                 //}
                 break;
             case 0xCB:                
-                //chunk_nb = G_io_apdu_buffer[3];
+                chunk_nb = G_io_apdu_buffer[3];
                 //tx += send_img_chunk(chunk_nb);
-                tx += send_words(1);
+                tx += send_column(chunk_nb);
+                //tx += send_img_chunk(chunk_nb);
 
                 THROW(SW_OK);
                 break;
