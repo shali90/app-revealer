@@ -14,12 +14,14 @@ void noiseSeedToKey(void);
 #define IMG_WIDTH  159
 #define IMG_HEIGHT 97
 
+
+
 #define IMG_YX 	   1+(IMG_WIDTH*IMG_HEIGHT)/8
 
 typedef struct internalStorage_t {
     uint32_t mt[N];	// mersene twister table
     uint32_t index; // mersene twister table index
-	char revealer_image[IMG_YX];
+	char revealer_image[IMG_YX];	
 } internalStorage_t;
 
 extern WIDE internalStorage_t N_storage_real;

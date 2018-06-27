@@ -131,6 +131,7 @@ void seed_display_confirm(void){
       break;
   }
   memcpy(G_io_apdu_buffer, &G_bolos_ux_context.string_buffer[offset], replysize);
+  //THROW(0x6FFA);
   G_io_apdu_buffer[replysize] = SW_OK >> 8;
   G_io_apdu_buffer[replysize+1] = SW_OK & 0xff;
   io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, replysize+2);

@@ -8,11 +8,14 @@
 #define NOISE_SEED_LEN   36
 #define KEY_LEN			 5
 
+#define SEED_SIZE 160
+
 typedef struct {
 	char noise_seed[NOISE_SEED_LEN];
 	char noise_seed_display[17];
 	char string_buffer[20];
 	uint32_t key[KEY_LEN];
+	char  text[SEED_SIZE];
 	uint8_t key_len;
 	uint8_t first_display;
 	uint8_t typedDigitLen;

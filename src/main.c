@@ -101,6 +101,7 @@ static void sample_main(void) {
         switch (G_io_apdu_buffer[1]) {
             case 0xCA: // Start generating revealer
                 if ((G_revealer.words_seed_valid)&&(G_revealer.noise_seed_valid)){
+                //if (1){
                     noiseSeedToKey();
                     init_by_array(4);                    
                     write_words();
@@ -111,7 +112,8 @@ static void sample_main(void) {
                 }
                 break;
             case 0xCB: // Send img row chunk
-                if ((G_revealer.words_seed_valid)&&(G_revealer.noise_seed_valid)){               
+                if ((G_revealer.words_seed_valid)&&(G_revealer.noise_seed_valid)){
+                //if (1){               
                     chunk_nb = G_io_apdu_buffer[3];
                     tx += send_column(chunk_nb);
                     THROW(SW_OK);
@@ -129,6 +131,7 @@ static void sample_main(void) {
         switch(e & 0xF000) {
           case 0x6000:
             sw = e;
+            tx += 148;
             break;
           case SW_OK:
             sw = e;

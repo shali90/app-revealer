@@ -501,6 +501,7 @@ screen_onboarding_4_restore_word_keyboard_callback(unsigned int event,
 unsigned int screen_onboarding_4_restore_word_final_compare_button(
     unsigned int button_mask, unsigned int button_mask_counter)
 {
+    int offset = 0;
     UNUSED(button_mask_counter);
     switch (button_mask)
     {
@@ -511,7 +512,21 @@ unsigned int screen_onboarding_4_restore_word_final_compare_button(
             screen_onboarding_3_restore_init();
         }
         else {
-            //ui_confirm_seed_display_init();
+             /* switch (G_bolos_ux_context.onboarding_kind){
+                case 24:
+                  offset = 128;
+                  break;
+                case 18:
+                  offset = 64;
+                  break;
+                case 12:
+                  offset = 64;
+                  break;
+                default:
+                  offset = 0;
+                  break;
+              }
+            strcpy(G_revealer.text, &G_bolos_ux_context.string_buffer[offset]);*/
             G_revealer.words_seed_valid = 1;
             ui_idle_init();
         }
