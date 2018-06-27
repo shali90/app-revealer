@@ -472,45 +472,45 @@ void write_words(void){
 
 	//THROW(0x6FFF);
 	curLineIdx = 0;
-	nextLineIdx = getNextLineIdx(G_revealer.text);
-	memcpy(text_display, &G_revealer.text[curLineIdx], nextLineIdx);
+	nextLineIdx = getNextLineIdx(text);
+	memcpy(text_display, &text[curLineIdx], nextLineIdx);
 	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  0, IMG_WIDTH, IMG_HEIGHT, text_display, nextLineIdx, BAGL_ENCODING_LATIN1);
-	strcpy(G_revealer.text, &G_revealer.text[nextLineIdx]);
+	strcpy(text, &text[nextLineIdx]);
 
-	nextLineIdx = getNextLineIdx(G_revealer.text);
-	memcpy(text_display, G_revealer.text, nextLineIdx);
+	nextLineIdx = getNextLineIdx(text);
+	memcpy(text_display, text, nextLineIdx);
 	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  12, IMG_WIDTH, IMG_HEIGHT, text_display, nextLineIdx, BAGL_ENCODING_LATIN1);
-	strcpy(G_revealer.text, &G_revealer.text[nextLineIdx]);
+	strcpy(text, &text[nextLineIdx]);
 
-	nextLineIdx = getNextLineIdx(G_revealer.text);
-	memcpy(text_display, G_revealer.text, nextLineIdx);
+	nextLineIdx = getNextLineIdx(text);
+	memcpy(text_display, text, nextLineIdx);
 	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  24, IMG_WIDTH, IMG_HEIGHT, text_display, nextLineIdx, BAGL_ENCODING_LATIN1);
-	strcpy(G_revealer.text, &G_revealer.text[nextLineIdx]);
+	strcpy(text, &text[nextLineIdx]);
 
-	nextLineIdx = getNextLineIdx(G_revealer.text);
-	memcpy(text_display, G_revealer.text, nextLineIdx);
+	nextLineIdx = getNextLineIdx(text);
+	memcpy(text_display, text, nextLineIdx);
 	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  36, IMG_WIDTH, IMG_HEIGHT, text_display, nextLineIdx, BAGL_ENCODING_LATIN1);
-	strcpy(G_revealer.text, &G_revealer.text[nextLineIdx]);
+	strcpy(text, &text[nextLineIdx]);
 
-	nextLineIdx = getNextLineIdx(G_revealer.text);
-	memcpy(text_display, G_revealer.text, nextLineIdx);
+	nextLineIdx = getNextLineIdx(text);
+	memcpy(text_display, text, nextLineIdx);
 	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  48, IMG_WIDTH, IMG_HEIGHT, text_display, nextLineIdx, BAGL_ENCODING_LATIN1);
-	strcpy(G_revealer.text, &G_revealer.text[nextLineIdx]);
+	strcpy(text, &text[nextLineIdx]);
 
-	nextLineIdx = getNextLineIdx(G_revealer.text);
-	memcpy(text_display, G_revealer.text, nextLineIdx);
+	nextLineIdx = getNextLineIdx(text);
+	memcpy(text_display, text, nextLineIdx);
 	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  60, IMG_WIDTH, IMG_HEIGHT, text_display, nextLineIdx, BAGL_ENCODING_LATIN1);
-	strcpy(G_revealer.text, &G_revealer.text[nextLineIdx]);
+	strcpy(text, &text[nextLineIdx]);
 
-	nextLineIdx = getNextLineIdx(G_revealer.text);
-	memcpy(text_display, G_revealer.text, nextLineIdx);
+	nextLineIdx = getNextLineIdx(text);
+	memcpy(text_display, text, nextLineIdx);
 	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  72, IMG_WIDTH, IMG_HEIGHT, text_display, nextLineIdx, BAGL_ENCODING_LATIN1);
-	strcpy(G_revealer.text, &G_revealer.text[nextLineIdx]);
+	strcpy(text, &text[nextLineIdx]);
 
-	nextLineIdx = getNextLineIdx(G_revealer.text);
-	memcpy(text_display, G_revealer.text, nextLineIdx);
+	nextLineIdx = getNextLineIdx(text);
+	memcpy(text_display, text, nextLineIdx);
 	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  84, IMG_WIDTH, IMG_HEIGHT, text_display, nextLineIdx, BAGL_ENCODING_LATIN1);
-	strcpy(G_revealer.text, &G_revealer.text[nextLineIdx]);
+	strcpy(text, &text[nextLineIdx]);
 }
 
 int send_column(int x){

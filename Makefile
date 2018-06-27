@@ -31,39 +31,20 @@ APP_LOAD_PARAMS = --appFlags 0x10 $(COMMON_LOAD_PARAMS) --apdu --curve secp256k1
 
 # Build configuration
 
-APP_SOURCE_PATH += src src_common
-SDK_SOURCE_PATH += lib_stusb lib_stusb_impl
-
 DEFINES += APPVERSION=\"$(APPVERSION)\"
 
 DEFINES += OS_IO_SEPROXYHAL IO_SEPROXYHAL_BUFFER_SIZE_B=128
 DEFINES += HAVE_BAGL HAVE_SPRINTF
-DEFINES += PRINTF\(...\)=
 #DEFINES   += HAVE_PRINTF PRINTF=screen_printf
+DEFINES += PRINTF\(...\)=
 DEFINES   += BOLOS_APP_ICON_SIZE_B=\(9+32\)
 DEFINES   += CX_COMPLIANCE_141
 DEFINES   += HAVE_ELECTRUM
 
 
-DEFINES += HAVE_IO_USB HAVE_L4_USBLIB IO_USB_MAX_ENDPOINTS=7 IO_HID_EP_LENGTH=64 HAVE_USB_APDU
+DEFINES += IO_USB_MAX_ENDPOINTS=7 IO_HID_EP_LENGTH=64
 
 # Compiler, assembler, and linker
-
-ifneq ($(BOLOS_ENV),)
-$(info BOLOS_ENV=$(BOLOS_ENV))
-CLANGPATH := $(BOLOS_ENV)/clang-arm-fropi/bin/
-GCCPATH := $(BOLOS_ENV)/gcc-arm-none-eabi-5_3-2016q1/bin/
-else
-$(info BOLOS_ENV is not set: falling back to CLANGPATH and GCCPATH)
-endif
-
-ifeq ($(CLANGPATH),)
-$(info CLANGPATH is not set: clang will be used from PATH)
-endif
-
-ifeq ($(GCCPATH),)
-$(info GCCPATH is not set: arm-none-eabi-* will be used from PATH)
-endif
 
 CC := $(CLANGPATH)clang
 CFLAGS += -O3 -Os
@@ -78,18 +59,11 @@ LDLIBS += -lm -lgcc -lc
 # import rules to compile glyphs(/pone)
 include $(BOLOS_SDK)/Makefile.glyphs
 
+APP_SOURCE_PATH += src src_common
+SDK_SOURCE_PATH += lib_stusb lib_stusb_impl
+DEFINES += HAVE_IO_USB HAVE_L4_USBLIB IO_USB_MAX_ENDPOINTS=7 IO_HID_EP_LENGTH=64 HAVE_USB_APDU
+
 # Main rules
-
-all: default
-
-# consider every intermediate target as final to avoid deleting intermediate files
-.SECONDARY:
-
-# disable builtin rules that overload the build process (and the debug log !!)
-.SUFFIXES:
-MAKEFLAGS += -r
-
-SHELL =       /bin/bash
 
 load: all
 	python -m ledgerblue.loadApp $(APP_LOAD_PARAMS)
