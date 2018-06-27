@@ -455,31 +455,14 @@ uint8_t getNextLineIdx(char *words){
 	return numCharInt;
 }
 
-
+#define SEED_SIZE 160
 
 void write_words(void){
-	
+	char  text[SEED_SIZE];
 	char  text_display[MAX_CHAR];
 	//test words
-	/*int offset = 0;
-  	switch (G_bolos_ux_context.onboarding_kind){
-	    case 24:
-		    offset = 128;
-		    break;
-	    case 18:
-	      	offset = 64;
-	      	break;
-	    case 12:
-	      	offset = 64;
-	      	break;
-	    default:
-	      	offset = 0;
-	      	break;
-	}*/
-	//strcpy(G_revealer.text,G_bolos_ux_context.words_buffer);
-	memcpy(G_revealer.text,G_bolos_ux_context.words_buffer,128);
-	//strcpy(text,&G_bolos_ux_context.string_buffer[64]);
-	//SPRINTF(text, "notable whip antenna current shallow mom guilt horn neither jump latin fetch cloth seat treat exhibit club south pumpkin swap able rude mutual roast");
+	//SPRINTF(text, "TRAFFIC POWDER RURAL WISH BLESS BEGIN TEXT PYRAMID SECOND FEED ANOTHER PANEL WRECK WOMAN DUTCH CHAIR REMOVE ERUPT PROPERTY BURGER AUTHOR FANTASY TWIST RANDOM");
+	strcpy(text,G_bolos_ux_context.words_buffer);
 	int bgcolor = 0x000000;
 	int fgcolor = 0xFFFFFF;
 

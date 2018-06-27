@@ -15,7 +15,6 @@ void noiseSeedToKey(void);
 #define IMG_HEIGHT 97
 
 
-
 #define IMG_YX 	   1+(IMG_WIDTH*IMG_HEIGHT)/8
 
 typedef struct internalStorage_t {
