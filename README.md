@@ -3,6 +3,8 @@
 Nano S application to generate revealer
 For information about revealer, please visit [revealer]
 
+/!\ Developpment in progress, use at your own risk
+
 # Setting up dev environnement
 Please follow [instructions]
 

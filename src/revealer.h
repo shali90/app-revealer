@@ -3,23 +3,25 @@
 #include "ux_nanos.h"
 
 void noiseSeedToKey(void);
-#define N  	624
-#define M 397
-#define UPPER_MASK 0x80000000U
-#define LOWER_MASK 0x7fffffffU
-#define MATRIX_A   0x9908b0dfU
+// Mersene twister algo defines
+#define N  		   	624
+#define M 		   	397
+#define UPPER_MASK 	0x80000000U
+#define LOWER_MASK 	0x7fffffffU
+#define MATRIX_A   	0x9908b0dfU
+#define KEY_LEN		5
 
-#define CHUNK_SIZE 250
-
-#define IMG_WIDTH  159
-#define IMG_HEIGHT 97
-
-
+// image defines
+#define CHUNK_SIZE 	250
+#define IMG_WIDTH  	159
+#define IMG_HEIGHT 	97
 #define IMG_YX 	   1+(IMG_WIDTH*IMG_HEIGHT)/8
 
 typedef struct internalStorage_t {
     uint32_t mt[N];	// mersene twister table
     uint32_t index; // mersene twister table index
+    uint32_t key[KEY_LEN];
+	uint8_t key_len;
 	char revealer_image[IMG_YX];	
 } internalStorage_t;
 

@@ -527,7 +527,7 @@ unsigned int screen_onboarding_4_restore_word_final_compare_button(
                   break;
               }
             strcpy(G_revealer.text, &G_bolos_ux_context.string_buffer[offset]);*/
-            G_revealer.words_seed_valid = 1;
+            G_bolos_ux_context.words_seed_valid = 1;
             ui_idle_init();
         }
         //os_sched_exit(0);
@@ -667,6 +667,7 @@ unsigned int screen_onboarding_4_restore_word_invalid_button(
     return 0;
 }
 
+//char text[160];
 
 void foo(void)
 {
@@ -681,7 +682,10 @@ void foo(void)
     bolos_ux_mnemonic_to_seed((unsigned char *)G_bolos_ux_context.words_buffer, 
     G_bolos_ux_context.words_buffer_length,
     buffer);
-    //PRINTF("Input seed:\n %.*H\n", 64, buffer);
+
+
+    //os_memmove(text, G_bolos_ux_context.words_buffer, G_bolos_ux_context.words_buffer_length);
+    //PRINTF("Input seed:\n %.*H\n", G_bolos_ux_context.words_buffer_length, G_bolos_ux_context.words_buffer);
 
     // get rootkey from hex-seed
     cx_hmac_sha512_t ctx;

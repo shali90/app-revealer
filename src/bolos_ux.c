@@ -19,7 +19,6 @@
 #include "cx.h"
 
 #include "os_io_seproxyhal.h"
-#include "string.h"
 
 #include "bolos_ux_common.h"
 
@@ -59,11 +58,11 @@ screen_display_element_callback(const bagl_element_t *element) {
 }
 
 // return true (stack slot +1) if an element
-unsigned int
+/*unsigned int
 screen_stack_is_element_array_present(const bagl_element_t *element_array) {
     unsigned int i, j;
     for (i = 0;
-         i < /*ARRAYLEN(G_bolos_ux_context.screen_stack)*/ G_bolos_ux_context
+         i <  G_bolos_ux_context
                  .screen_stack_count;
          i++) {
         for (j = 0; j < G_bolos_ux_context.screen_stack[i].element_arrays_count;
@@ -139,7 +138,7 @@ void screen_stack_remove(unsigned int stack_slot) {
 
     // wipe last slot
     screen_stack_pop();
-}
+}*/
 
 void screen_display_element(const bagl_element_t *element) {
     const bagl_element_t *el = screen_display_element_callback(element);

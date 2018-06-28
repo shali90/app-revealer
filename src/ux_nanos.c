@@ -52,7 +52,7 @@ const ux_menu_entry_t ui_type_seed_words_menu_nanos[] = {
   UX_MENU_END
 }; 
 
-const bagl_element_t ui_confirm_seed_display_nanos[] = {
+/*const bagl_element_t ui_confirm_seed_display_nanos[] = {
     // type                               userid    x    y   w    h  str rad
     // fill      fg        bg      fid iid  txt   touchparams...       ]
     {{BAGL_RECTANGLE, 0x00, 0, 0, 128, 32, 0, 0, BAGL_FILL, 0x000000, 0xFFFFFF,
@@ -153,19 +153,21 @@ unsigned int ui_confirm_seed_display_nanos_button(unsigned int button_mask,unsig
     default:
         break;
     }
-}
+}*/
 
 
 void ui_idle_init(void) {
   uiState = UI_IDLE;
 
-  if ((G_revealer.noise_seed_valid == 1)&&(G_revealer.words_seed_valid == 1)){
+  PRINTF("HELLO\n");
+
+  if ((G_bolos_ux_context.noise_seed_valid == 1)&&(G_bolos_ux_context.words_seed_valid == 1)){
     UX_MENU_DISPLAY(0, ui_idle_mainmenu_nanos_all_valid, NULL);
   }
-  else if ((G_revealer.noise_seed_valid == 1)&&(G_revealer.words_seed_valid == 0)){
+  else if ((G_bolos_ux_context.noise_seed_valid == 1)&&(G_bolos_ux_context.words_seed_valid == 0)){
     UX_MENU_DISPLAY(0, ui_idle_mainmenu_nanos_noise_seed_valid, NULL); 
   }
-  else if ((G_revealer.noise_seed_valid == 0)&&(G_revealer.words_seed_valid == 1)){
+  else if ((G_bolos_ux_context.noise_seed_valid == 0)&&(G_bolos_ux_context.words_seed_valid == 1)){
     UX_MENU_DISPLAY(0, ui_idle_mainmenu_nanos_words_seed_valid, NULL);
   }
   else{
@@ -185,9 +187,9 @@ void ui_type_seed_words_init(void){
   UX_CALLBACK_SET_INTERVAL(1000);
 }
 
-void ui_confirm_seed_display_init(void){
+/*void ui_confirm_seed_display_init(void){
   UX_DISPLAY(ui_confirm_seed_display_nanos,NULL);
-}
+}*/
 
 #define PIN_DIGIT_LEN 17
 static const char C_pin_digit[] = {'0','1','2','3','4','5','6','7','8','9','a','b','c', 'd', 'e', 'f', '<',};
@@ -233,7 +235,7 @@ const bagl_element_t ui_noise_seed_final_compare_nanos[] = {
      NULL},
     {{BAGL_LABELINE, 0x03, 10, 26, 128, 32, 0, 0, 0, 0xFFFFFF, 0x000000,
       BAGL_FONT_OPEN_SANS_EXTRABOLD_11px | BAGL_FONT_ALIGNMENT_CENTER, 0},
-     G_revealer.string_buffer,
+     G_bolos_ux_context.string_buffer,
      0,
      0,
      0,
@@ -245,15 +247,15 @@ const bagl_element_t ui_noise_seed_final_compare_nanos[] = {
 unsigned int ui_noise_seed_final_compare_nanos_prepro(const  bagl_element_t* element){
   uint8_t j = 0;
   if (element->component.userid == 0x03){ 
-    if (G_revealer.noise_seed_valid == 1){
-      SPRINTF(G_revealer.string_buffer, "is valid");
+    if (G_bolos_ux_context.noise_seed_valid == 1){
+      SPRINTF(G_bolos_ux_context.string_buffer, "is valid");
     }
     else{
-      SPRINTF(G_revealer.string_buffer, "is invalid");
+      SPRINTF(G_bolos_ux_context.string_buffer, "is invalid");
     }    
   }
   else if (element->component.userid == 0x02){ //check
-    if (G_revealer.noise_seed_valid == 0){
+    if (G_bolos_ux_context.noise_seed_valid == 0){
       return 0;
     }
   }
@@ -301,7 +303,7 @@ const bagl_element_t ui_type_noise_seed_nanos[] = {
     0, 0, 
     NULL, NULL, NULL },
   { {BAGL_LABELINE,   0x02,    0,   26, 128,  32,    0,    0,         0,   0xFFFFFF, 0x000000,    BAGL_FONT_OPEN_SANS_REGULAR_11px|BAGL_FONT_ALIGNMENT_CENTER, 0  }, 
-    G_revealer.noise_seed_display,
+    G_bolos_ux_context.string_buffer,
     //noise_seed_display,
     0, 
     0, 0, 
@@ -313,28 +315,25 @@ const bagl_element_t ui_type_noise_seed_nanos[] = {
 unsigned int ui_type_noise_seed_nanos_prepro(const  bagl_element_t* element){
   uint8_t j = 0;
   if (element->component.userid == 0x02){ // ie noise_seed_display
-    if (G_revealer.typedDigitLen >= MAX_CHAR_PER_LINE-1){
-      //G_revealer.noise_seed_display = G_revealer.noise_seed+(G_revealer.typedDigitLen-MAX_CHAR_PER_LINE);
-      //memcpy(G_revealer.noise_seed_display, G_revealer.noise_seed[G_revealer.typedDigitLen-MAX_CHAR_PER_LINE], 16);
-      G_revealer.noise_seed_display[16] = '\0';
-      G_revealer.noise_seed_display[15] = C_pin_digit[G_revealer.offset];
-      int j = G_revealer.typedDigitLen-1;
+    if (G_bolos_ux_context.typedDigitLen >= MAX_CHAR_PER_LINE-1){
+      //G_bolos_ux_context.string_buffer = G_bolos_ux_context.noise_seed+(G_bolos_ux_context.typedDigitLen-MAX_CHAR_PER_LINE);
+      //memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.noise_seed[G_bolos_ux_context.typedDigitLen-MAX_CHAR_PER_LINE], 16);
+      G_bolos_ux_context.string_buffer[16] = '\0';
+      G_bolos_ux_context.string_buffer[15] = C_pin_digit[G_bolos_ux_context.offset];
+      int j = G_bolos_ux_context.typedDigitLen-1;
       for (int i=14; i>=0; i--){
-        G_revealer.noise_seed_display[i] = G_revealer.noise_seed[j--];
+        G_bolos_ux_context.string_buffer[i] = G_bolos_ux_context.noise_seed[j--];
         //noise_seed_display[i] = '0';
         //j--;
       }
     }
     else{
-      G_revealer.noise_seed_display[G_revealer.typedDigitLen] = C_pin_digit[G_revealer.offset];  
-      /*if (G_revealer.typedDigitLen >0){
-        G_revealer.noise_seed_display[G_revealer.typedDigitLen+1] = '_';
+      G_bolos_ux_context.string_buffer[G_bolos_ux_context.typedDigitLen] = C_pin_digit[G_bolos_ux_context.offset];  
+      /*if (G_bolos_ux_context.typedDigitLen >0){
+        G_bolos_ux_context.string_buffer[G_bolos_ux_context.typedDigitLen+1] = '_';
       }*/ 
     }    
   }
-  /*else if (G_revealer.first_display == 0){
-    return 0;
-  }*/
   return 1;
 }
 
@@ -343,43 +342,40 @@ unsigned int ui_type_noise_seed_nanos_prepro(const  bagl_element_t* element){
 unsigned int ui_type_noise_seed_nanos_button(unsigned int button_mask,unsigned int button_mask_counter) {
   switch (button_mask) {
   case BUTTON_EVT_RELEASED | BUTTON_LEFT:
-      G_revealer.first_display = 0;
-      if (G_revealer.offset == 0){
-        G_revealer.offset = G_revealer.typedDigitLen == 0 ? PIN_DIGIT_LEN-2:PIN_DIGIT_LEN-1;
+      if (G_bolos_ux_context.offset == 0){
+        G_bolos_ux_context.offset = G_bolos_ux_context.typedDigitLen == 0 ? PIN_DIGIT_LEN-2:PIN_DIGIT_LEN-1;
       }
       else {
-        G_revealer.offset = G_revealer.offset-1;
+        G_bolos_ux_context.offset = G_bolos_ux_context.offset-1;
       }
       break;
 
   case BUTTON_EVT_RELEASED | BUTTON_RIGHT:  
       //confirm
-      G_revealer.first_display = 0;
-      G_revealer.offset = (G_revealer.offset+1)%PIN_DIGIT_LEN;
+      G_bolos_ux_context.offset = (G_bolos_ux_context.offset+1)%PIN_DIGIT_LEN;
       //seed_display_confirm();
       break;
 
   case BUTTON_EVT_RELEASED|BUTTON_LEFT|BUTTON_RIGHT:
-      G_revealer.first_display = 0;
-      switch (C_pin_digit[G_revealer.offset]){
+      switch (C_pin_digit[G_bolos_ux_context.offset]){
         case '<':
-          if (G_revealer.typedDigitLen > 0){
-            G_revealer.noise_seed_display[G_revealer.typedDigitLen] = '\0';
-            G_revealer.typedDigitLen--;
-            //G_revealer.noise_seed_display[G_revealer.typedDigitLen] = '_';              
+          if (G_bolos_ux_context.typedDigitLen > 0){
+            G_bolos_ux_context.string_buffer[G_bolos_ux_context.typedDigitLen] = '\0';
+            G_bolos_ux_context.typedDigitLen--;
+            //G_bolos_ux_context.string_buffer[G_bolos_ux_context.typedDigitLen] = '_';              
           }
-          G_revealer.offset = G_revealer.typedDigitLen == 0 ? 7:PIN_DIGIT_LEN-1;
+          G_bolos_ux_context.offset = G_bolos_ux_context.typedDigitLen == 0 ? 7:PIN_DIGIT_LEN-1;
           break;
         default:                    
-          G_revealer.noise_seed[G_revealer.typedDigitLen] = C_pin_digit[G_revealer.offset];
-          G_revealer.typedDigitLen++;
-          G_revealer.offset = 7;
-          if (G_revealer.typedDigitLen == 36){
-            if (isNoise(G_revealer.noise_seed,33)){
-              G_revealer.noise_seed_valid = 1;
+          G_bolos_ux_context.noise_seed[G_bolos_ux_context.typedDigitLen] = C_pin_digit[G_bolos_ux_context.offset];
+          G_bolos_ux_context.typedDigitLen++;
+          G_bolos_ux_context.offset = 7;
+          if (G_bolos_ux_context.typedDigitLen == 36){
+            if (isNoise(G_bolos_ux_context.noise_seed,33)){
+              G_bolos_ux_context.noise_seed_valid = 1;
             }
             else {
-              G_revealer.noise_seed_valid = 0;             
+              G_bolos_ux_context.noise_seed_valid = 0;             
             }
             //ui_idle_init();
             UX_DISPLAY(ui_noise_seed_final_compare_nanos, ui_noise_seed_final_compare_nanos_prepro);
@@ -393,15 +389,12 @@ unsigned int ui_type_noise_seed_nanos_button(unsigned int button_mask,unsigned i
 }
 
 void revealer_struct_init(void){
-  os_memset(G_revealer.noise_seed, '\0', 36);
-  os_memset(G_revealer.noise_seed_display, '\0', 17);
-  os_memset(G_revealer.string_buffer, '\0', 20);
-  os_memset(G_revealer.key, 0x00 ,4*KEY_LEN);
-  G_revealer.first_display = 1;
-  G_revealer.typedDigitLen = 0;
-  G_revealer.offset = 7;
-  G_revealer.noise_seed_valid = 0;
-  G_revealer.words_seed_valid = 0;
+  os_memset(G_bolos_ux_context.noise_seed, '\0', 36);
+  os_memset(G_bolos_ux_context.string_buffer, '\0', 17);
+  G_bolos_ux_context.typedDigitLen = 0;
+  G_bolos_ux_context.offset = 7;
+  G_bolos_ux_context.noise_seed_valid = 0;
+  G_bolos_ux_context.words_seed_valid = 0;
 }
 
 void ui_type_noise_seed_nanos_init(void){

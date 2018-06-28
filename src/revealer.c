@@ -27,30 +27,37 @@ void noiseSeedToKey(void){
 	uint8_t offset = 32;
 	uint8_t shift = 0;
 	uint8_t i = 0;
+	uint32_t val = 0x00000000;
 
+	nvm_write(N_storage.key, (uint32_t *)&val, KEY_LEN * sizeof(uint32_t));
 	for (i = 0; i < KEY_LEN-1; i++){
+		//nvm_write(&N_storage.mt[0], (uint32_t *)&s, sizeof(uint32_t));
+		val = 0x00000000;
         shift = 0;
 		for (uint8_t j = offset-8*i; j > offset-8*i - 8; j--){
-			byte = G_revealer.noise_seed[j];
+			byte = G_bolos_ux_context.noise_seed[j];
 			if (byte >= '0' && byte <= '9') byte = byte - '0';
         	else if (byte >= 'a' && byte <='f') byte = byte - 'a' + 10;
-        	G_revealer.key[i] += (byte&0x0F) << shift*4;
+        	val += (byte&0x0F) << shift*4;
         	shift++;
 		}
+		nvm_write(&N_storage.key[i], (uint32_t *)&val, sizeof(uint32_t));
 	}
-	byte = G_revealer.noise_seed[0];
+	byte = G_bolos_ux_context.noise_seed[0];
 	byte == (byte >= '0' && byte <= '9')?byte - '0':byte - 'a' + 10;
-	G_revealer.key[4] = (byte&0x0F);
+	val = (byte&0x0F);
+	nvm_write(&N_storage.key[4], (uint32_t *)&val, sizeof(uint32_t));
 
-	G_revealer.key_len = 5;
+	val = 5;
 	for (i=4; i>=0; i--){
-		if (G_revealer.key[i]==0x00000000){
-			G_revealer.key_len--;
+		if (N_storage.key[i]==0x00000000){
+			val--;
 		}
 		else {
 			break;
 		}
 	}
+	nvm_write(&N_storage.key_len, (uint32_t *)&val, sizeof(uint32_t));
 }
 
 WIDE internalStorage_t N_storage_real;
@@ -75,7 +82,7 @@ void init_by_array(uint8_t key_length){
 	j = 0;
 	k = (N>key_length ? N : key_length);
 	for (; k; k--) {
-        val = (N_storage.mt[i] ^ ((N_storage.mt[i-1] ^ (N_storage.mt[i-1] >> 30)) * 1664525U)) + G_revealer.key[j] + (uint32_t)j;
+        val = (N_storage.mt[i] ^ ((N_storage.mt[i-1] ^ (N_storage.mt[i-1] >> 30)) * 1664525U)) + N_storage.key[j] + (uint32_t)j;
         nvm_write(&N_storage.mt[i], (uint32_t *)&val, sizeof(uint32_t));
         i++; 
         j++;
@@ -153,7 +160,7 @@ int screen_draw_YXlinemax;
 int screen_draw_Ybitmask;
 unsigned int* screen_draw_colors;
 
-void screen_clear(void) {
+/*void screen_clear(void) {
   char val;
   val = 0x00;
   //memset(revealer_image, 0, sizeof(revealer_image)); 
@@ -161,7 +168,7 @@ void screen_clear(void) {
   	nvm_write(&N_storage.revealer_image[i], (char *)&val, sizeof(char));  	
   }
   screen_changed = 1;
-}
+}*/
 
 
 void draw_bitmap_within_rect_internal(unsigned int bit_per_pixel, const unsigned char* bitmap, unsigned int bitmap_length_bits) {
@@ -343,9 +350,9 @@ int draw_string(unsigned short font_id, unsigned int fgcolor, unsigned int bgcol
       default:
       case BAGL_ENCODING_LATIN1:
         ch = *((unsigned char*)text); 
-        if (ch != ' '){
+        /*if (ch != ' '){
         	ch-=0x20; //uppercase
-        }
+        }*/
         text = (void*)(((unsigned char*)text)+1);
         break;
     }
@@ -356,10 +363,9 @@ int draw_string(unsigned short font_id, unsigned int fgcolor, unsigned int bgcol
     const unsigned char * ch_bitmap = NULL;
     int ch_y = y;
 
-    if (ch < font->first_char || ch > font->last_char) {
+    /*if (ch < font->first_char || ch > font->last_char) {
       //printf("invalid char");
       // can't proceed
-      //THROW(0x6FFF);
       if (ch == '\n' || ch == '\r') {
         y += ch_height; // no interleave
 
@@ -393,13 +399,13 @@ int draw_string(unsigned short font_id, unsigned int fgcolor, unsigned int bgcol
         }
       }
     }
-    else {
+    else {*/
       ch -= font->first_char;
       ch_bitmap = &font->bitmap[font->characters[ch].bitmap_offset];
       ch_width = font->characters[ch].char_width;
       ch_kerning = font->char_kerning;
       ch_height = font->char_height;
-    }
+    //}
 
     // retrieve the char bitmap
 
@@ -438,7 +444,7 @@ int draw_string(unsigned short font_id, unsigned int fgcolor, unsigned int bgcol
   // return newest position, for upcoming printf
   return (y<<16)|(xx&0xFFFF);
 }
-#define MAX_CHAR	21
+#define MAX_CHAR	25
 
 uint8_t getNextLineIdx(char *words){
 	uint8_t numChar, numCharInt, offset;
@@ -455,10 +461,10 @@ uint8_t getNextLineIdx(char *words){
 	return numCharInt;
 }
 
-#define SEED_SIZE 160
+char text[SEED_SIZE];
 
 void write_words(void){
-	char  text[SEED_SIZE];
+	
 	char  text_display[MAX_CHAR];
 	//test words
 	//SPRINTF(text, "TRAFFIC POWDER RURAL WISH BLESS BEGIN TEXT PYRAMID SECOND FEED ANOTHER PANEL WRECK WOMAN DUTCH CHAIR REMOVE ERUPT PROPERTY BURGER AUTHOR FANTASY TWIST RANDOM");
@@ -468,7 +474,7 @@ void write_words(void){
 
 	uint8_t nextLineIdx, curLineIdx;
 
-	screen_clear();
+	//screen_clear();
 
 	//THROW(0x6FFF);
 	curLineIdx = 0;

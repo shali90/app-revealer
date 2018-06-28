@@ -21,6 +21,7 @@
 #include "revealer.h"
 #include "error_codes.h"
 #include "ux_nanos.h"
+#include "bolos_ux.h"
 
 #include "os_io_seproxyhal.h"
 
@@ -28,8 +29,6 @@ unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 
 static unsigned int current_text_pos; // parsing cursor in the text to display
 static unsigned int text_y;           // current location of the displayed text
-
-ux_revealer G_revealer;
 
 // UI currently displayed
 extern enum UI_STATE { UI_IDLE, UI_TEXT, UI_APPROVAL };
@@ -81,6 +80,7 @@ static void sample_main(void) {
     uint8_t chunk_nb;
     for (;;) {
     volatile unsigned short sw = 0;
+    //G_bolos_ux_context.revealer_image[0]=0;
 
     BEGIN_TRY {
       TRY {
@@ -100,7 +100,8 @@ static void sample_main(void) {
 
         switch (G_io_apdu_buffer[1]) {
             case 0xCA: // Start generating revealer
-                if ((G_revealer.words_seed_valid)&&(G_revealer.noise_seed_valid)){
+                //if(1){
+                if ((G_bolos_ux_context.words_seed_valid)&&(G_bolos_ux_context.noise_seed_valid)){
                     noiseSeedToKey();
                     init_by_array(4);                    
                     write_words();
@@ -111,7 +112,8 @@ static void sample_main(void) {
                 }
                 break;
             case 0xCB: // Send img row chunk
-                if ((G_revealer.words_seed_valid)&&(G_revealer.noise_seed_valid)){
+                //if(1){
+                if ((G_bolos_ux_context.words_seed_valid)&&(G_bolos_ux_context.noise_seed_valid)){
                     chunk_nb = G_io_apdu_buffer[3];
                     tx += send_column(chunk_nb);
                     THROW(SW_OK);
@@ -176,7 +178,6 @@ static unsigned char display_text_part() {
     return 1;
 }
 
-#include "bolos_ux.h"
 
 unsigned char io_event(unsigned char channel) {
     // nothing done with the event, throw an error on the transport layer if
