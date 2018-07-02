@@ -2,6 +2,8 @@
 #include "ux_nanos.h"
 #include "font.h"
 
+WIDE internalStorage_t N_storage_real;
+#define N_storage (*(WIDE internalStorage_t *)PIC(&N_storage_real)) 
 
 
 uint8_t isNoise(char * string, uint8_t hashPos){
@@ -59,9 +61,6 @@ void noiseSeedToKey(void){
 	}
 	nvm_write(&N_storage.key_len, (uint32_t *)&val, sizeof(uint32_t));
 }
-
-WIDE internalStorage_t N_storage_real;
-#define N_storage (*(WIDE internalStorage_t *)PIC(&N_storage_real)) 
 
 
 void init_prng(uint32_t s){
@@ -147,6 +146,8 @@ uint8_t random_getrandbits(uint8_t k){
 	}while (ret >1);
 	return ret;
 }
+
+
 
 // Code below is adapted from Nano S MCU screen HAL driver, screen is replaced by an image matrix stored in nvram cf revealer.h
 unsigned int screen_changed; // to avoid screen update for nothing

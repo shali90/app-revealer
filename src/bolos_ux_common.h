@@ -36,13 +36,14 @@ extern bolos_ux_context_t G_bolos_ux_context;
 
 extern const unsigned char hex_digits[];
 
-
 // common code for all screens
 // start display of first declared element
 
 // request display of the element (taking care of calling screen displayed
 // preprocessors)
 void screen_display_element(const bagl_element_t *element);
+
+void display_processing_screen(void);
 
 // all screens
 void screen_onboarding_3_restore_init(void);

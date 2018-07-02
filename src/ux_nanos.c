@@ -159,7 +159,7 @@ unsigned int ui_confirm_seed_display_nanos_button(unsigned int button_mask,unsig
 void ui_idle_init(void) {
   uiState = UI_IDLE;
 
-  PRINTF("HELLO\n");
+  //PRINTF("HELLO\n");
 
   if ((G_bolos_ux_context.noise_seed_valid == 1)&&(G_bolos_ux_context.words_seed_valid == 1)){
     UX_MENU_DISPLAY(0, ui_idle_mainmenu_nanos_all_valid, NULL);
@@ -338,6 +338,68 @@ unsigned int ui_type_noise_seed_nanos_prepro(const  bagl_element_t* element){
 }
 
 // max shift = 12
+const bagl_element_t ui_processing[] = {
+    // erase
+    {{BAGL_RECTANGLE, 0x00, 0, 0, 128, 32, 0, 0, BAGL_FILL, 0x000000, 0xFFFFFF,
+      0, 0},
+     NULL,
+     0,
+     0,
+     0,
+     NULL,
+     NULL,
+     NULL},
+
+    {{BAGL_ICON, 0x01, 11, 9, 14, 14, 0, 0, 0, 0xFFFFFF, 0x000000, 0,
+      BAGL_GLYPH_ICON_LOADING_BADGE},
+     NULL,
+     0,
+     0,
+     0,
+     NULL,
+     NULL,
+     NULL},
+
+    {{BAGL_LABELINE, 0x00, 10, 20, 128, 32, 0, 0, 0, 0xFFFFFF, 0x000000,
+      BAGL_FONT_OPEN_SANS_EXTRABOLD_11px | BAGL_FONT_ALIGNMENT_CENTER | BAGL_FONT_ALIGNMENT_MIDDLE, 0},
+     "Processing...",
+     0,
+     0,
+     0,
+     NULL,
+     NULL,
+     NULL}
+};
+
+unsigned int ui_processing_button(
+    unsigned int button_mask, unsigned int button_mask_counter){
+        // No interaction here
+    }
+
+const bagl_element_t * 
+ui_processing_before_element_display_callback(const bagl_element_t *element) 
+{
+    // copy element to be displayed
+    os_memmove(&G_bolos_ux_context.tmp_element, PIC(element),
+               sizeof(G_bolos_ux_context.tmp_element));
+
+    if(element->component.userid == 0x01)
+    {
+        G_bolos_ux_context.tmp_element.component.width =
+            C_badge_loading_v2.width;
+        
+        G_bolos_ux_context.tmp_element.component.y = 9;
+        G_bolos_ux_context.tmp_element.component.height =
+            C_badge_loading_v2.height;
+        G_bolos_ux_context.tmp_element.component.type = BAGL_ICON;
+        G_bolos_ux_context.tmp_element.component.icon_id = 0;
+        G_bolos_ux_context.tmp_element.text =
+            (const char *)&C_badge_loading_v2;
+    }
+    // update element display
+    return &G_bolos_ux_context.tmp_element;
+}
+
 
 unsigned int ui_type_noise_seed_nanos_button(unsigned int button_mask,unsigned int button_mask_counter) {
   switch (button_mask) {
@@ -371,14 +433,20 @@ unsigned int ui_type_noise_seed_nanos_button(unsigned int button_mask,unsigned i
           G_bolos_ux_context.typedDigitLen++;
           G_bolos_ux_context.offset = 7;
           if (G_bolos_ux_context.typedDigitLen == 36){
-            if (isNoise(G_bolos_ux_context.noise_seed,33)){
+            display_processing_screen();
+            G_bolos_ux_context.processing = 2;
+            /*if (isNoise(G_bolos_ux_context.noise_seed,33)){
               G_bolos_ux_context.noise_seed_valid = 1;
+              //ui_type_noise_seed_nanos_validate();
+              //display_processing_screen();
+              G_bolos_ux_context.processing = 2;
+              //UX_DISPLAY(ui_processing, ui_processing_before_element_display_callback);
             }
             else {
               G_bolos_ux_context.noise_seed_valid = 0;             
             }
             //ui_idle_init();
-            UX_DISPLAY(ui_noise_seed_final_compare_nanos, ui_noise_seed_final_compare_nanos_prepro);
+            UX_DISPLAY(ui_noise_seed_final_compare_nanos, ui_noise_seed_final_compare_nanos_prepro);*/
           }
           break;
       }        
@@ -390,7 +458,9 @@ unsigned int ui_type_noise_seed_nanos_button(unsigned int button_mask,unsigned i
 
 void revealer_struct_init(void){
   os_memset(G_bolos_ux_context.noise_seed, '\0', 36);
-  os_memset(G_bolos_ux_context.string_buffer, '\0', 17);
+  os_memset(G_bolos_ux_context.string_buffer, '\0', MAX(64, sizeof(bagl_icon_details_t) +
+                                   BOLOS_APP_ICON_SIZE_B -
+                                   1));
   G_bolos_ux_context.typedDigitLen = 0;
   G_bolos_ux_context.offset = 7;
   G_bolos_ux_context.noise_seed_valid = 0;
@@ -398,5 +468,23 @@ void revealer_struct_init(void){
 }
 
 void ui_type_noise_seed_nanos_init(void){
+  os_memset(G_bolos_ux_context.string_buffer, '\0', MAX(64, sizeof(bagl_icon_details_t) +
+                                   BOLOS_APP_ICON_SIZE_B -
+                                   1));
+  //G_bolos_ux_context.string_buffer[1] = '\0';
   UX_DISPLAY(ui_type_noise_seed_nanos,ui_type_noise_seed_nanos_prepro);
+}
+
+void initPrng_Cb(void){
+  G_bolos_ux_context.processing = 0;
+  io_seproxyhal_general_status();
+  if (isNoise(G_bolos_ux_context.noise_seed,33)){
+    G_bolos_ux_context.noise_seed_valid = 1;
+    noiseSeedToKey();
+    init_by_array(4);
+  }
+  else {
+    G_bolos_ux_context.noise_seed_valid = 0;
+  }
+  UX_DISPLAY(ui_noise_seed_final_compare_nanos, ui_noise_seed_final_compare_nanos_prepro);
 }

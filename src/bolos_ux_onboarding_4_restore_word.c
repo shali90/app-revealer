@@ -285,6 +285,8 @@ const bagl_element_t screen_onboarding_4_processing[] = {
      NULL}
 };
 
+
+
 unsigned int screen_onboarding_4_restore_word_select_button(
     unsigned int button_mask, unsigned int button_mask_counter);
 
@@ -556,6 +558,7 @@ screen_onboarding_4_restore_word_final_compare_before_element_display_callback(
         if(G_bolos_ux_context.input_seed_is_identical)
         {
             SPRINTF(G_bolos_ux_context.string_buffer, "matches");
+            write_words();
         }
         else
         {
@@ -710,6 +713,10 @@ void foo(void)
 }
 
 
+void display_processing_screen(void){
+    UX_DISPLAY(screen_onboarding_4_processing, screen_onboarding_4_processing_before_element_display_callback);
+}
+
 void screen_onboarding_4_restore_word_validate(void)
 {
     bolos_ux_bip39_idx_strcpy(
@@ -741,12 +748,10 @@ void screen_onboarding_4_restore_word_validate(void)
         else
         {
             // allright, the recovery phrase looks ok, compare it to onboarded seed
-
             //Display processing warning to user
-            UX_DISPLAY(screen_onboarding_4_processing, screen_onboarding_4_processing_before_element_display_callback);
-            G_bolos_ux_context.processing = 1;
-
-            
+            display_processing_screen();
+            //UX_DISPLAY(screen_onboarding_4_processing, screen_onboarding_4_processing_before_element_display_callback);
+            G_bolos_ux_context.processing = 1;            
         }
     }
     else

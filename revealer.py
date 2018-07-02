@@ -88,11 +88,11 @@ img.YX = 0
 
 args = get_argparser().parse_args()
 dongle = getDongle(args.apdu)
-data = binascii.unhexlify("80CA000000")
-result = dongle.exchange(bytearray(data))
+#data = binascii.unhexlify("80CA000000")
+#result = dongle.exchange(bytearray(data))
 
-if args.apdu:
-    print("<= Clear " + str(result))
+#if args.apdu:
+#    print("<= Clear " + str(result))
 
 for i in range(img.width()):
     data = binascii.unhexlify("80CB00" + "0x{:02x}".format(i)[2:] + "00")

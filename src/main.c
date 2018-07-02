@@ -77,7 +77,7 @@ static void sample_main(void) {
     volatile unsigned int tx = 0;
     uint8_t flags;
     revealer_struct_init();
-    uint8_t chunk_nb;
+    uint8_t row_nb;
     for (;;) {
     volatile unsigned short sw = 0;
     //G_bolos_ux_context.revealer_image[0]=0;
@@ -99,23 +99,11 @@ static void sample_main(void) {
         }
 
         switch (G_io_apdu_buffer[1]) {
-            case 0xCA: // Start generating revealer
-                //if(1){
-                if ((G_bolos_ux_context.words_seed_valid)&&(G_bolos_ux_context.noise_seed_valid)){
-                    noiseSeedToKey();
-                    init_by_array(4);                    
-                    write_words();
-                    THROW(SW_OK);                        
-                }
-                else {
-                    THROW(BOTH_SEEDS_UNSET);
-                }
-                break;
             case 0xCB: // Send img row chunk
                 //if(1){
                 if ((G_bolos_ux_context.words_seed_valid)&&(G_bolos_ux_context.noise_seed_valid)){
-                    chunk_nb = G_io_apdu_buffer[3];
-                    tx += send_column(chunk_nb);
+                    row_nb = G_io_apdu_buffer[3];
+                    tx += send_column(row_nb);
                     THROW(SW_OK);
                 }
                 else {
@@ -202,6 +190,9 @@ unsigned char io_event(unsigned char channel) {
             if(G_bolos_ux_context.processing == 1)
             {
                 UX_DISPLAYED_EVENT(foo(););
+            }
+            else if (G_bolos_ux_context.processing == 2){
+                UX_DISPLAYED_EVENT(initPrng_Cb(););
             }
             else
             {
