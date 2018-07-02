@@ -682,7 +682,9 @@ void check_and_write_words_Cb(void)
     // convert mnemonic to hex-seed
     uint8_t buffer[64];
     
+    // Save values before hash and update in bolos_ux_mnemonic_to_seed
     strcpy(G_bolos_ux_context.words, G_bolos_ux_context.words_buffer);
+    G_bolos_ux_context.words_length = G_bolos_ux_context.words_buffer_length;
 
     bolos_ux_mnemonic_to_seed((unsigned char *)G_bolos_ux_context.words_buffer, 
     G_bolos_ux_context.words_buffer_length,

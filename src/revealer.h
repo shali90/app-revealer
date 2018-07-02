@@ -28,4 +28,5 @@ typedef struct internalStorage_t {
 extern WIDE internalStorage_t N_storage_real;
 #define N_storage (*(WIDE internalStorage_t *)PIC(&N_storage_real))
 
-#define BAGL_FONT_FONT_11PX 0
+#define BAGL_FONT_FONT_11PX 0x00
+#define BAGL_FONT_FONT_16PX 0x01

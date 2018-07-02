@@ -327,16 +327,13 @@ void draw_bitmap_within_rect(int x, int y, unsigned int width, unsigned int heig
   }
 }*/
 
-int draw_string(unsigned short font_id, unsigned int fgcolor, unsigned int bgcolor, int x, int y, unsigned int width, unsigned int height, const void* text, unsigned int text_length, unsigned char text_encoding) {
+int draw_string(bagl_font_t font_id, unsigned int fgcolor, unsigned int bgcolor, int x, int y, unsigned int width, unsigned int height, const void* text, unsigned int text_length, unsigned char text_encoding) {
   unsigned int xx;
   unsigned int colors[16];
   colors[0] = bgcolor;
   colors[1] = fgcolor;
 
-  const bagl_font_t *font = &fontFONT_11PX;
-  if (font == NULL) {
-    return 0;
-  }
+  bagl_font_t *font = &font_id;
 
   // always comparing this way, very optimized etc
   width += x;
@@ -449,7 +446,14 @@ int draw_string(unsigned short font_id, unsigned int fgcolor, unsigned int bgcol
   // return newest position, for upcoming printf
   return (y<<16)|(xx&0xFFFF);
 }
-#define MAX_CHAR	25
+
+// max char num in words to use 16 px font
+#define MAX_CHAR_16 	85	
+// max char per line for each font
+#define MAX_CHAR_L_11	25
+#define MAX_CHAR_L_16	18
+
+uint8_t max_char_l;
 
 uint8_t getNextLineIdx(char *words){
 	uint8_t numChar, numCharInt, offset;
@@ -459,7 +463,7 @@ uint8_t getNextLineIdx(char *words){
 		if (*words==' '){
 			numChar = numCharInt;
 		}
-		if (numCharInt > MAX_CHAR){
+		if (numCharInt > max_char_l){
 			return numChar + 1;
 		}
 	}
@@ -479,50 +483,78 @@ void write_words(void){
 	int fgcolor = 0xFFFFFF;
 
 	uint8_t nextLineIdx, curLineIdx;
-
-	//screen_clear();
-
-	//THROW(0x6FFF);
 	curLineIdx = 0;
-	nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
-	memcpy(G_bolos_ux_context.string_buffer, &G_bolos_ux_context.words[curLineIdx], nextLineIdx);
-	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  0, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
-	strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
 
-	nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
-	memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
-	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  12, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
-	strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
+	if (G_bolos_ux_context.words_length > MAX_CHAR_16){
+		//draw 8 lines of 11 px font
+		max_char_l = MAX_CHAR_L_11;
+		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
+		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
+		draw_string(fontFONT_11PX, fgcolor, bgcolor, 0,  0, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
+		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
 
-	nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
-	memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
-	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  24, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
-	strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
+		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
+		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
+		draw_string(fontFONT_11PX, fgcolor, bgcolor, 0,  12, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
+		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
 
-	nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
-	memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
-	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  36, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
-	strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
+		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
+		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
+		draw_string(fontFONT_11PX, fgcolor, bgcolor, 0,  24, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
+		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
 
-	nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
-	memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
-	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  48, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
-	strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
+		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
+		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
+		draw_string(fontFONT_11PX, fgcolor, bgcolor, 0,  36, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
+		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
 
-	nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
-	memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
-	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  60, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
-	strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
+		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
+		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
+		draw_string(fontFONT_11PX, fgcolor, bgcolor, 0,  48, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
+		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
 
-	nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
-	memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
-	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  72, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
-	strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
+		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
+		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
+		draw_string(fontFONT_11PX, fgcolor, bgcolor, 0,  60, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
+		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
 
-	nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
-	memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
-	draw_string(BAGL_FONT_FONT_11PX, fgcolor, bgcolor, 0,  84, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
-	//strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
+		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
+		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
+		draw_string(fontFONT_11PX, fgcolor, bgcolor, 0,  72, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
+		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
+
+		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
+		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
+		draw_string(fontFONT_11PX, fgcolor, bgcolor, 0,  84, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
+	}
+	else {
+		// Draw 5 lines of 16 px font
+		max_char_l = MAX_CHAR_L_16;
+		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
+		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
+		draw_string(fontFONT_16PX, fgcolor, bgcolor, 0,  0, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
+		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
+
+		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
+		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
+		draw_string(fontFONT_16PX, fgcolor, bgcolor, 0,  17, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
+		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
+
+		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
+		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
+		draw_string(fontFONT_16PX, fgcolor, bgcolor, 0,  34, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
+		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
+
+		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
+		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
+		draw_string(fontFONT_16PX, fgcolor, bgcolor, 0,  51, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
+		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
+
+		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
+		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
+		draw_string(fontFONT_16PX, fgcolor, bgcolor, 0,  68, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
+		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
+	}
 }
 
 int send_column(int x){

@@ -186,6 +186,7 @@ typedef struct bolos_ux_context {
     //char revealer_image[IMG_YX];
     char noise_seed[NOISE_SEED_LEN];
     char words[SEED_SIZE];
+    int  words_length;
     uint8_t typedDigitLen;
     uint8_t offset;
     uint8_t noise_seed_valid;
