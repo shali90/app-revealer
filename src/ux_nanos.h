@@ -7,7 +7,7 @@
 
 
 
-#define SEED_SIZE 160
+#define SEED_SIZE 200
 
 extern char  text[SEED_SIZE];
 

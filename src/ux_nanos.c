@@ -191,6 +191,107 @@ void ui_type_seed_words_init(void){
   UX_DISPLAY(ui_confirm_seed_display_nanos,NULL);
 }*/
 
+/*const bagl_element_t ui_revealer_in_progress[] = {
+    // erase
+    {{BAGL_RECTANGLE, 0x00, 0, 0, 128, 32, 0, 0, BAGL_FILL, 0x000000, 0xFFFFFF,
+      0, 0},
+     NULL,
+     0,
+     0,
+     0,
+     NULL,
+     NULL,
+     NULL},
+    {{BAGL_LABELINE, 0x00, 10, 12, 128, 32, 0, 0, 0, 0xFFFFFF, 0x000000,
+      BAGL_FONT_OPEN_SANS_EXTRABOLD_11px | BAGL_FONT_ALIGNMENT_CENTER, 0},
+     "Revealer in progress",
+     0,
+     0,
+     0,
+     NULL,
+     NULL,
+     NULL},
+    {{BAGL_LABELINE, 0x03, 10, 26, 128, 32, 0, 0, 0, 0xFFFFFF, 0x000000,
+      BAGL_FONT_OPEN_SANS_EXTRABOLD_11px | BAGL_FONT_ALIGNMENT_CENTER, 0},
+     "0/159",
+     0,
+     0,
+     0,
+     NULL,
+     NULL,
+     NULL},
+};
+
+unsigned int ui_revealer_in_progress_prepro(const  bagl_element_t* element){
+  return 1;
+}
+
+unsigned int ui_revealer_in_progress_button(unsigned int button_mask,unsigned int button_mask_counter) {
+  switch (button_mask) {
+  case BUTTON_EVT_RELEASED|BUTTON_LEFT|BUTTON_RIGHT:
+      //os_sched_exit(0);
+      break;
+  default:
+      break;
+  }
+  ui_idle_init();
+}
+
+const bagl_element_t ui_revealer_final[] = {
+    // erase
+    {{BAGL_RECTANGLE, 0x00, 0, 0, 128, 32, 0, 0, BAGL_FILL, 0x000000, 0xFFFFFF,
+      0, 0},
+     NULL,
+     0,
+     0,
+     0,
+     NULL,
+     NULL,
+     NULL},
+
+    {{BAGL_ICON, 0x02, 6, 9, 14, 14, 0, 0, 0, 0xFFFFFF, 0x000000, 0,
+      BAGL_GLYPH_ICON_CHECK_BADGE},
+     NULL,
+     0,
+     0,
+     0,
+     NULL,
+     NULL,
+     NULL},
+    {{BAGL_LABELINE, 0x00, 10, 12, 128, 32, 0, 0, 0, 0xFFFFFF, 0x000000,
+      BAGL_FONT_OPEN_SANS_EXTRABOLD_11px | BAGL_FONT_ALIGNMENT_CENTER, 0},
+     "Revealer successfully",
+     0,
+     0,
+     0,
+     NULL,
+     NULL,
+     NULL},
+    {{BAGL_LABELINE, 0x03, 10, 26, 128, 32, 0, 0, 0, 0xFFFFFF, 0x000000,
+      BAGL_FONT_OPEN_SANS_EXTRABOLD_11px | BAGL_FONT_ALIGNMENT_CENTER, 0},
+     "generated",
+     0,
+     0,
+     0,
+     NULL,
+     NULL,
+     NULL},
+};
+
+unsigned int ui_revealer_final_prepro(const  bagl_element_t* element){
+  return 1;
+}
+
+unsigned int ui_revealer_final_button(unsigned int button_mask,unsigned int button_mask_counter) {
+  switch (button_mask) {
+  case BUTTON_EVT_RELEASED|BUTTON_LEFT|BUTTON_RIGHT:
+      os_sched_exit(0);
+      break;
+  default:
+      break;
+  }
+}*/
+
 #define PIN_DIGIT_LEN 17
 static const char C_pin_digit[] = {'0','1','2','3','4','5','6','7','8','9','a','b','c', 'd', 'e', 'f', '<',};
 
@@ -488,3 +589,21 @@ void initPrng_Cb(void){
   }
   UX_DISPLAY(ui_noise_seed_final_compare_nanos, ui_noise_seed_final_compare_nanos_prepro);
 }
+
+/*void send_column_Cb(uint8_t nb){
+  io_seproxyhal_general_status();
+
+  if (nb == IMG_WIDTH-1){
+    G_bolos_ux_context.processing = 0;
+    UX_DISPLAY(ui_revealer_final, ui_revealer_final_prepro);
+  }
+  else {
+    G_bolos_ux_context.processing = 3;
+    //UX_DISPLAY(ui_revealer_in_progress, ui_revealer_in_progress_prepro);
+    //THROW(SW_OK);
+  }
+  //UX_MENU_DISPLAY(0, ui_idle_mainmenu_nanos_all_valid, NULL);
+  //io_seproxyhal_general_status();
+  //ui_idle_init();
+  //THROW(SW_OK);
+}*/

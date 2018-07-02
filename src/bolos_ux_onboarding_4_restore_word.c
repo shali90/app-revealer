@@ -558,7 +558,7 @@ screen_onboarding_4_restore_word_final_compare_before_element_display_callback(
         if(G_bolos_ux_context.input_seed_is_identical)
         {
             SPRINTF(G_bolos_ux_context.string_buffer, "matches");
-            write_words();
+            //write_words();
         }
         else
         {
@@ -672,7 +672,7 @@ unsigned int screen_onboarding_4_restore_word_invalid_button(
 
 //char text[160];
 
-void foo(void)
+void check_and_write_words_Cb(void)
 {
     //PRINTF("HELLO\n");
     G_bolos_ux_context.processing = 0;
@@ -681,13 +681,14 @@ void foo(void)
 
     // convert mnemonic to hex-seed
     uint8_t buffer[64];
+    
+    strcpy(G_bolos_ux_context.words, G_bolos_ux_context.words_buffer);
 
     bolos_ux_mnemonic_to_seed((unsigned char *)G_bolos_ux_context.words_buffer, 
     G_bolos_ux_context.words_buffer_length,
     buffer);
 
 
-    //os_memmove(text, G_bolos_ux_context.words_buffer, G_bolos_ux_context.words_buffer_length);
     //PRINTF("Input seed:\n %.*H\n", G_bolos_ux_context.words_buffer_length, G_bolos_ux_context.words_buffer);
 
     // get rootkey from hex-seed
@@ -707,8 +708,9 @@ void foo(void)
 
     // compare both rootkey
     G_bolos_ux_context.input_seed_is_identical = os_secure_memcmp(buffer, buffer_device, 64) ? 0:1;
-
-
+    if (G_bolos_ux_context.input_seed_is_identical){
+        write_words();
+    }
     UX_DISPLAY(screen_onboarding_4_restore_word_final_compare, screen_onboarding_4_restore_word_final_compare_before_element_display_callback);
 }
 
@@ -726,7 +728,6 @@ void screen_onboarding_4_restore_word_validate(void)
                           G_bolos_ux_context.words_buffer_length));
     G_bolos_ux_context.words_buffer_length =
         strlen(G_bolos_ux_context.words_buffer);
-
     // a word has been added
     G_bolos_ux_context.onboarding_step++;
 
@@ -759,7 +760,6 @@ void screen_onboarding_4_restore_word_validate(void)
         // add a space before next word
         G_bolos_ux_context
             .words_buffer[G_bolos_ux_context.words_buffer_length++] = ' ';
-
         // enter the next word
         screen_onboarding_4_restore_word_init(0);
     }

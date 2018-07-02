@@ -27,6 +27,7 @@
 #define IMG_HEIGHT        97
 #define IMG_YX            1+(IMG_WIDTH*IMG_HEIGHT)/8
 #define NOISE_SEED_LEN    36
+#define SEED_SIZE 200
 
 typedef unsigned int (*callback_t)(unsigned int);
 
@@ -184,7 +185,7 @@ typedef struct bolos_ux_context {
     // revealer related
     //char revealer_image[IMG_YX];
     char noise_seed[NOISE_SEED_LEN];
-    //char noise_seed_display[17];
+    char words[SEED_SIZE];
     uint8_t typedDigitLen;
     uint8_t offset;
     uint8_t noise_seed_valid;

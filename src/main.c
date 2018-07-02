@@ -69,6 +69,7 @@ unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len) {
     return 0;
 }
 
+uint8_t row_nb;
 static void sample_main(void) {
 
     // next timer callback in 500 ms
@@ -77,7 +78,6 @@ static void sample_main(void) {
     volatile unsigned int tx = 0;
     uint8_t flags;
     revealer_struct_init();
-    uint8_t row_nb;
     for (;;) {
     volatile unsigned short sw = 0;
     //G_bolos_ux_context.revealer_image[0]=0;
@@ -102,6 +102,8 @@ static void sample_main(void) {
             case 0xCB: // Send img row chunk
                 //if(1){
                 if ((G_bolos_ux_context.words_seed_valid)&&(G_bolos_ux_context.noise_seed_valid)){
+                    /*display_processing_screen();
+                    G_bolos_ux_context.processing = 3;*/
                     row_nb = G_io_apdu_buffer[3];
                     tx += send_column(row_nb);
                     THROW(SW_OK);
@@ -189,10 +191,18 @@ unsigned char io_event(unsigned char channel) {
         else {
             if(G_bolos_ux_context.processing == 1)
             {
-                UX_DISPLAYED_EVENT(foo(););
+                UX_DISPLAYED_EVENT(check_and_write_words_Cb(););
             }
             else if (G_bolos_ux_context.processing == 2){
                 UX_DISPLAYED_EVENT(initPrng_Cb(););
+            }
+            else if (G_bolos_ux_context.processing == 3){
+                G_bolos_ux_context.processing = 0;
+                //io_seproxyhal_general_status();
+                //ui_idle_init();
+                //UX_DISPLAYED_EVENT(send_column_Cb(row_nb););
+                //io_seproxyhal_general_status();
+                //UX_DISPLAYED_EVENT();
             }
             else
             {
