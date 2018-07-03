@@ -149,7 +149,7 @@ uint8_t random_getrandbits(uint8_t k){
 }
 
 // aes key used to crypt/decrypt image
-//cx_aes_key_t aes_key;
+cx_aes_key_t aes_key;
 
 // Code below is adapted from Nano S MCU screen HAL driver, screen is replaced by an image matrix stored in nvram cf revealer.h
 unsigned int screen_changed; // to avoid screen update for nothing
@@ -215,7 +215,7 @@ void draw_bitmap_within_rect_internal(unsigned int bit_per_pixel, const unsigned
         else {
           val &= ~Ybitmask;
         }
-        //cx_aes(&aes_key, CX_ENCRYPT|CX_LAST|CX_CHAIN_ECB, &val, 1, &val);
+        //cx_aes(&aes_key, CX_ENCRYPT|CX_CHAIN_ECB, &val, 1, &val);
         //THROW(0x6FFD);
         nvm_write(&N_storage.revealer_image[YX], (char*)&val, sizeof(char));
       }
@@ -470,90 +470,46 @@ uint8_t getNextLineIdx(char *words){
 	return numCharInt;
 }
 
+
 void write_words(void){
 	
 	//SPRINTF(text, "TRAFFIC POWDER RURAL WISH BLESS BEGIN TEXT PYRAMID SECOND FEED ANOTHER PANEL WRECK WOMAN DUTCH CHAIR REMOVE ERUPT PROPERTY BURGER AUTHOR FANTASY TWIST RANDOM");
 
 	//strcpy(text,G_bolos_ux_context.words_buffer);
 
-	//cx_aes_init_key(text, 16 , &aes_key);
+	//cx_aes_init_key(G_bolos_ux_context.words, 16 , &aes_key);
 
 
 	int bgcolor = 0x000000;
 	int fgcolor = 0xFFFFFF;
 
-	uint8_t nextLineIdx, curLineIdx;
+	uint8_t nextLineIdx, curLineIdx, charRemaining;
 	curLineIdx = 0;
-
-	if (G_bolos_ux_context.words_length > MAX_CHAR_16){
-		//draw 8 lines of 11 px font
+	charRemaining = G_bolos_ux_context.words_length; 
+	uint8_t line = 0;
+	if (charRemaining > MAX_CHAR_16){
+		//draw max 8 lines of 11 px font
 		max_char_l = MAX_CHAR_L_11;
-		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
-		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
-		draw_string(fontFONT_11PX, fgcolor, bgcolor, 0,  0, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
-		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
-
-		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
-		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
-		draw_string(fontFONT_11PX, fgcolor, bgcolor, 0,  12, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
-		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
-
-		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
-		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
-		draw_string(fontFONT_11PX, fgcolor, bgcolor, 0,  24, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
-		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
-
-		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
-		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
-		draw_string(fontFONT_11PX, fgcolor, bgcolor, 0,  36, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
-		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
-
-		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
-		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
-		draw_string(fontFONT_11PX, fgcolor, bgcolor, 0,  48, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
-		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
-
-		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
-		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
-		draw_string(fontFONT_11PX, fgcolor, bgcolor, 0,  60, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
-		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
-
-		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
-		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
-		draw_string(fontFONT_11PX, fgcolor, bgcolor, 0,  72, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
-		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
-
-		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
-		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
-		draw_string(fontFONT_11PX, fgcolor, bgcolor, 0,  84, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
+		while ((charRemaining)&&(line < IMG_HEIGHT)){
+			nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
+			memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
+			draw_string(fontFONT_11PX, fgcolor, bgcolor, 0,  line, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
+			strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
+			charRemaining -= nextLineIdx;
+			line += 12;
+		}		
 	}
 	else {
-		// Draw 5 lines of 16 px font
+		// Draw max 5 lines of 16 px font 
 		max_char_l = MAX_CHAR_L_16;
-		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
-		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
-		draw_string(fontFONT_16PX, fgcolor, bgcolor, 0,  0, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
-		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
-
-		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
-		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
-		draw_string(fontFONT_16PX, fgcolor, bgcolor, 0,  17, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
-		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
-
-		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
-		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
-		draw_string(fontFONT_16PX, fgcolor, bgcolor, 0,  34, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
-		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
-
-		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
-		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
-		draw_string(fontFONT_16PX, fgcolor, bgcolor, 0,  51, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
-		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
-
-		nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
-		memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
-		draw_string(fontFONT_16PX, fgcolor, bgcolor, 0,  68, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
-		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
+		while ((charRemaining)&&(line < IMG_HEIGHT)){
+			nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
+			memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
+			draw_string(fontFONT_16PX, fgcolor, bgcolor, 0,  line, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
+			strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
+			charRemaining -= nextLineIdx;
+			line += 17;
+		}
 	}
 }
 
