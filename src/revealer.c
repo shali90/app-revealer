@@ -12,7 +12,7 @@ uint8_t isNoise(char * string, uint8_t hashPos){
 
 	cx_sha256_t context;
 	cx_sha256_init(&context);
-	cx_hash(&context,CX_LAST,string,hashPos,computedHash);
+	cx_hash(&context,CX_LAST,string,hashPos,computedHash, 32);
 
 	if ((0x0F & computedHash[30]) == (0x0F & *(string+hashPos)) && \
         (computedHash[31]>>4)     == (0x0F & *(string+hashPos+1)) && \

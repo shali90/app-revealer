@@ -698,7 +698,7 @@ void check_and_write_words_Cb(void)
     const char key[] = "Bitcoin seed";
 
     cx_hmac_sha512_init(&ctx, key, sizeof(key));
-    cx_hmac(&ctx,CX_LAST, buffer, 64, buffer);
+    cx_hmac(&ctx,CX_LAST, buffer, 64, buffer, 64);
     //PRINTF("Root key from input:\n%.*H\n", 64, buffer);
 
     // get rootkey from device's seed

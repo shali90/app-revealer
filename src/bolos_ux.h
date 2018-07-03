@@ -191,7 +191,6 @@ typedef struct bolos_ux_context {
     uint8_t offset;
     uint8_t noise_seed_valid;
     uint8_t words_seed_valid;
-
 } bolos_ux_context_t;
 
 // update before, current, after index for horizontal slider with 3 positions

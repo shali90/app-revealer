@@ -31,7 +31,8 @@ unsigned int bolos_ux_mnemonic_from_data(unsigned char *in,
     if ((inLength % 4) || (inLength < 16) || (inLength > 32)) {
         THROW(INVALID_PARAMETER);
     }
-    cx_hash_sha256(in, inLength, bits);
+    // 33 or 32 four out_len ??
+    cx_hash_sha256(in, inLength, bits, 32);
 
     bits[inLength] = bits[0];
     os_memmove(bits, in, inLength);
@@ -68,7 +69,7 @@ unsigned int
 bolos_ux_mnemonic_to_seed_hash_length128(unsigned char *mnemonic,
                                          unsigned int mnemonicLength) {
     if (mnemonicLength > 128) {
-        cx_hash_sha512(mnemonic, mnemonicLength, mnemonic);
+        cx_hash_sha512(mnemonic, mnemonicLength, mnemonic, 128);
         // new mnemonic length
         mnemonicLength = 64;
     }
@@ -182,7 +183,8 @@ unsigned int bolos_ux_mnemonic_check(unsigned char *mnemonic,
         return 0;
     }
     bits[32] = bits[n * 4 / 3];
-    cx_hash_sha256(bits, n * 4 / 3, bits);
+    // 33 or 32 four out_len ??
+    cx_hash_sha256(bits, n * 4 / 3, bits, 32);
     switch (n) {
     case 12:
         mask = 0xF0;
