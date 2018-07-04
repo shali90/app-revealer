@@ -100,8 +100,11 @@ static void sample_main(void) {
 
         switch (G_io_apdu_buffer[1]) {
             case 0xCB: // Send img row chunk
-                //if(1){
+                #ifndef WORDS_IMG_DBG
                 if ((G_bolos_ux_context.words_seed_valid)&&(G_bolos_ux_context.noise_seed_valid)){
+                #else
+                if (G_bolos_ux_context.words_seed_valid){
+                #endif
                     /*display_processing_screen();
                     G_bolos_ux_context.processing = 3;*/
                     row_nb = G_io_apdu_buffer[3];

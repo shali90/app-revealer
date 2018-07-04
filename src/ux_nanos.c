@@ -1,5 +1,6 @@
 #include "ux_nanos.h"
 #include "error_codes.h"
+#include "revealer.h"
 
 
 enum UI_STATE { UI_IDLE, UI_TEXT, UI_APPROVAL };
@@ -346,7 +347,6 @@ const bagl_element_t ui_noise_seed_final_compare_nanos[] = {
 };
 
 unsigned int ui_noise_seed_final_compare_nanos_prepro(const  bagl_element_t* element){
-  uint8_t j = 0;
   if (element->component.userid == 0x03){ 
     if (G_bolos_ux_context.noise_seed_valid == 1){
       SPRINTF(G_bolos_ux_context.string_buffer, "is valid");
@@ -371,6 +371,7 @@ unsigned int ui_noise_seed_final_compare_nanos_button(unsigned int button_mask,u
   default:
       break;
   }
+  return 0;
 }
 
 const bagl_element_t ui_type_noise_seed_nanos[] = {
@@ -414,7 +415,6 @@ const bagl_element_t ui_type_noise_seed_nanos[] = {
 #define MAX_CHAR_PER_LINE 16
 
 unsigned int ui_type_noise_seed_nanos_prepro(const  bagl_element_t* element){
-  uint8_t j = 0;
   if (element->component.userid == 0x02){ // ie noise_seed_display
     if (G_bolos_ux_context.typedDigitLen >= MAX_CHAR_PER_LINE-1){
       //G_bolos_ux_context.string_buffer = G_bolos_ux_context.noise_seed+(G_bolos_ux_context.typedDigitLen-MAX_CHAR_PER_LINE);
@@ -471,11 +471,6 @@ const bagl_element_t ui_processing[] = {
      NULL,
      NULL}
 };
-
-unsigned int ui_processing_button(
-    unsigned int button_mask, unsigned int button_mask_counter){
-        // No interaction here
-    }
 
 const bagl_element_t * 
 ui_processing_before_element_display_callback(const bagl_element_t *element) 
@@ -555,6 +550,7 @@ unsigned int ui_type_noise_seed_nanos_button(unsigned int button_mask,unsigned i
   default:
       break;
   }
+  return 0;
 }
 
 void revealer_struct_init(void){
@@ -583,6 +579,7 @@ void initPrng_Cb(void){
     G_bolos_ux_context.noise_seed_valid = 1;
     noiseSeedToKey();
     init_by_array(4);
+    write_noise();
   }
   else {
     G_bolos_ux_context.noise_seed_valid = 0;

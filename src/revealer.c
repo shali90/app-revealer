@@ -23,7 +23,7 @@ uint8_t isNoise(char * string, uint8_t hashPos){
 }
 
 // test noise seed
-//static const char  seed[] = "0eca2c8cfa19be8a64a7d76772253ac07";
+// static const char  seed[] = "0eca2c8cfa19be8a64a7d76772253ac07";
 
 void noiseSeedToKey(void){
 	uint8_t byte = 0;
@@ -62,7 +62,6 @@ void noiseSeedToKey(void){
 	}
 	nvm_write(&N_storage.key_len, (uint32_t *)&val, sizeof(uint32_t));
 }
-
 
 void init_prng(uint32_t s){
     uint32_t mti;
@@ -148,9 +147,6 @@ uint8_t random_getrandbits(uint8_t k){
 	return ret;
 }
 
-// aes key used to crypt/decrypt image
-cx_aes_key_t aes_key;
-
 // Code below is adapted from Nano S MCU screen HAL driver, screen is replaced by an image matrix stored in nvram cf revealer.h
 unsigned int screen_changed; // to avoid screen update for nothing
 
@@ -162,17 +158,6 @@ int screen_draw_YX;
 int screen_draw_YXlinemax;
 int screen_draw_Ybitmask;
 unsigned int* screen_draw_colors;
-
-/*void screen_clear(void) {
-  char val;
-  val = 0x00;
-  //memset(revealer_image, 0, sizeof(revealer_image)); 
-  for (int i=0; i<(IMG_WIDTH*IMG_HEIGHT)/8; i++){
-  	nvm_write(&N_storage.revealer_image[i], (char *)&val, sizeof(char));  	
-  }
-  screen_changed = 1;
-}*/
-
 
 void draw_bitmap_within_rect_internal(unsigned int bit_per_pixel, const unsigned char* bitmap, unsigned int bitmap_length_bits) {
   unsigned int i;
@@ -197,7 +182,7 @@ void draw_bitmap_within_rect_internal(unsigned int bit_per_pixel, const unsigned
     unsigned int ch = *bitmap++;
     // draw each pixel (at most 256 index color bitmap support)
     
-    for (i = 0; i < 8 && bitmap_length_bits; bitmap_length_bits -= bit_per_pixel, i += bit_per_pixel) {
+	for (i = 0; i < 8 && bitmap_length_bits; bitmap_length_bits -= bit_per_pixel, i += bit_per_pixel) {
     //for (i = 0; i < 8 ; i++) {
       // grab LSB to MSB bits
       // 2 colors only
@@ -209,15 +194,19 @@ void draw_bitmap_within_rect_internal(unsigned int bit_per_pixel, const unsigned
       // 
       if (y>=0 && xx>=0) { // else we're out of screen
         val = N_storage.revealer_image[YX];
-    	if (colors[((ch>>i) & pixel_mask)] != 0) {
+    #ifndef WORDS_IMG_DBG //Debug macro to write words only in image (no noise)
+        if (colors[((ch>>i) & pixel_mask)] != 0) {
           val |= Ybitmask;
         }
         else {
           val &= ~Ybitmask;
-        }
-        //cx_aes(&aes_key, CX_ENCRYPT|CX_CHAIN_ECB, &val, 1, &val);
-        //THROW(0x6FFD);
-        nvm_write(&N_storage.revealer_image[YX], (char*)&val, sizeof(char));
+        }        
+    #else
+      	if (colors[((ch>>i) & pixel_mask)] != 0) {
+          val ^= Ybitmask; 
+        }        
+    #endif
+       	nvm_write(&N_storage.revealer_image[YX], (char*)&val, sizeof(char));
       }
 
 
@@ -235,7 +224,7 @@ void draw_bitmap_within_rect_internal(unsigned int bit_per_pixel, const unsigned
       if (height == 0) {
       	goto end;
       }
-    }
+    }	
   }
   // save for continue
 end:
@@ -473,13 +462,6 @@ uint8_t getNextLineIdx(char *words){
 
 void write_words(void){
 	
-	//SPRINTF(text, "TRAFFIC POWDER RURAL WISH BLESS BEGIN TEXT PYRAMID SECOND FEED ANOTHER PANEL WRECK WOMAN DUTCH CHAIR REMOVE ERUPT PROPERTY BURGER AUTHOR FANTASY TWIST RANDOM");
-
-	//strcpy(text,G_bolos_ux_context.words_buffer);
-
-	//cx_aes_init_key(G_bolos_ux_context.words, 16 , &aes_key);
-
-
 	int bgcolor = 0x000000;
 	int fgcolor = 0xFFFFFF;
 
@@ -513,6 +495,25 @@ void write_words(void){
 	}
 }
 
+void write_noise(void){
+	int YX;
+	uint8_t x, y, val, cpt;
+	cpt = 0;
+	val = 0;
+	for (x=0; x<IMG_WIDTH; x++){
+		for (y=0; y<IMG_HEIGHT/8; y++){
+			YX = y*IMG_WIDTH + x;
+			val = 0;
+			for (uint8_t j=0; j<8; j++){
+				val += (random_getrandbits(2)&1)<<j;
+			}
+			nvm_write(&N_storage.revealer_image[YX], (uint8_t *)&val, sizeof(uint8_t));
+		}
+		//dump last pixel
+		random_getrandbits(2);
+	}
+}
+
 int send_column(int x){
 	int YX;
 	uint8_t idx;
@@ -521,10 +522,8 @@ int send_column(int x){
 	for (int i=0; i<IMG_HEIGHT/8; i++){
 		YX = i*IMG_WIDTH+x;
 		val = N_storage.revealer_image[YX];
-		//cx_aes(&aes_key, CX_DECRYPT, &val, 16, &val);	
 		for (uint8_t j=0; j<8; j++){
 			G_io_apdu_buffer[idx] = (val>>j)&1;
-			G_io_apdu_buffer[idx] ^= random_getrandbits(2);
 			idx++;
 			if (idx == IMG_HEIGHT-1){
 				break;
@@ -532,7 +531,6 @@ int send_column(int x){
 		}
 	}
 	G_io_apdu_buffer[IMG_HEIGHT-1] = 0;
-	G_io_apdu_buffer[IMG_HEIGHT-1] ^= random_getrandbits(2);
 	return IMG_HEIGHT;
 }
 
