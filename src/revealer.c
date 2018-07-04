@@ -194,7 +194,7 @@ void draw_bitmap_within_rect_internal(unsigned int bit_per_pixel, const unsigned
       // 
       if (y>=0 && xx>=0) { // else we're out of screen
         val = N_storage.revealer_image[YX];
-    #ifndef WORDS_IMG_DBG //Debug macro to write words only in image (no noise)
+    #ifdef WORDS_IMG_DBG //Debug macro to write words only in image (no noise)
         if (colors[((ch>>i) & pixel_mask)] != 0) {
           val |= Ybitmask;
         }

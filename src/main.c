@@ -105,8 +105,6 @@ static void sample_main(void) {
                 #else
                 if (G_bolos_ux_context.words_seed_valid){
                 #endif
-                    /*display_processing_screen();
-                    G_bolos_ux_context.processing = 3;*/
                     row_nb = G_io_apdu_buffer[3];
                     tx += send_column(row_nb);
                     THROW(SW_OK);
@@ -199,14 +197,6 @@ unsigned char io_event(unsigned char channel) {
             else if (G_bolos_ux_context.processing == 2){
                 UX_DISPLAYED_EVENT(initPrng_Cb(););
             }
-            else if (G_bolos_ux_context.processing == 3){
-                G_bolos_ux_context.processing = 0;
-                //io_seproxyhal_general_status();
-                //ui_idle_init();
-                //UX_DISPLAYED_EVENT(send_column_Cb(row_nb););
-                //io_seproxyhal_general_status();
-                //UX_DISPLAYED_EVENT();
-            }
             else
             {
                 UX_DISPLAYED_EVENT();
@@ -276,6 +266,7 @@ __attribute__((section(".boot"))) int main(void) {
             USB_power(1);
 
             //ui_idle();
+            revealer_struct_init();
             ui_idle_init();
             sample_main();
         }

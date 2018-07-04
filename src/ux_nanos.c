@@ -19,7 +19,7 @@ const ux_menu_entry_t menu_about_nanos[] = {
 
 const ux_menu_entry_t ui_idle_mainmenu_nanos[] = {
   {NULL, ui_type_noise_seed_nanos_init, 0, /*&icon_hack*/NULL, "Type your", "noise seed", 32, 10},
-  {NULL, screen_onboarding_3_restore_init, 0, /*&icon_hack*/NULL, "Type your", "seed words", 32, 10},
+  //{NULL, screen_onboarding_3_restore_init, 0, /*&icon_hack*/NULL, "Type your", "seed words", 32, 10},
   {menu_about_nanos, NULL, 0, NULL, "About", NULL, 0, 0},
   {NULL, os_sched_exit, 0, &C_icon_dashboard, "Quit app", NULL, 50, 29},
   UX_MENU_END
@@ -33,7 +33,7 @@ const ux_menu_entry_t ui_idle_mainmenu_nanos_noise_seed_valid[] = {
 };
 
 const ux_menu_entry_t ui_idle_mainmenu_nanos_words_seed_valid[] = {
-  {NULL, ui_type_noise_seed_nanos_init, 0, /*&icon_hack*/NULL, "Type your", "noise seed", 32, 10},
+  {NULL, ui_type_noise_seed_nanos_init, 0, NULL, "Type your", "noise seed", 32, 10},
   {menu_about_nanos, NULL, 0, NULL, "About", NULL, 0, 0},
   {NULL, os_sched_exit, 0, &C_icon_dashboard, "Quit app", NULL, 50, 29},
   UX_MENU_END
@@ -165,14 +165,14 @@ void ui_idle_init(void) {
   if ((G_bolos_ux_context.noise_seed_valid == 1)&&(G_bolos_ux_context.words_seed_valid == 1)){
     UX_MENU_DISPLAY(0, ui_idle_mainmenu_nanos_all_valid, NULL);
   }
-  else if ((G_bolos_ux_context.noise_seed_valid == 1)&&(G_bolos_ux_context.words_seed_valid == 0)){
+  else if (G_bolos_ux_context.noise_seed_valid == 1){
     UX_MENU_DISPLAY(0, ui_idle_mainmenu_nanos_noise_seed_valid, NULL); 
   }
   else if ((G_bolos_ux_context.noise_seed_valid == 0)&&(G_bolos_ux_context.words_seed_valid == 1)){
     UX_MENU_DISPLAY(0, ui_idle_mainmenu_nanos_words_seed_valid, NULL);
   }
   else{
-    revealer_struct_init();
+    //revealer_struct_init();
     UX_MENU_DISPLAY(0, ui_idle_mainmenu_nanos, NULL);    
   }
 
@@ -560,15 +560,16 @@ void revealer_struct_init(void){
                                    1));
   G_bolos_ux_context.typedDigitLen = 0;
   G_bolos_ux_context.offset = 7;
-  G_bolos_ux_context.noise_seed_valid = 0;
+  #ifndef WORDS_IMG_DBG
+    G_bolos_ux_context.noise_seed_valid = 0;
+  #else
+    G_bolos_ux_context.noise_seed_valid = 1;
+  #endif
   G_bolos_ux_context.words_seed_valid = 0;
 }
 
 void ui_type_noise_seed_nanos_init(void){
-  os_memset(G_bolos_ux_context.string_buffer, '\0', MAX(64, sizeof(bagl_icon_details_t) +
-                                   BOLOS_APP_ICON_SIZE_B -
-                                   1));
-  //G_bolos_ux_context.string_buffer[1] = '\0';
+  revealer_struct_init();
   UX_DISPLAY(ui_type_noise_seed_nanos,ui_type_noise_seed_nanos_prepro);
 }
 
