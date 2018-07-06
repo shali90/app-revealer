@@ -436,62 +436,98 @@ int draw_string(bagl_font_t font_id, unsigned int fgcolor, unsigned int bgcolor,
   return (y<<16)|(xx&0xFFFF);
 }
 
-// max char num in words to use 16 px font
-#define MAX_CHAR_16 	85	
-// max char per line for each font
-#define MAX_CHAR_L_11	25
-#define MAX_CHAR_L_16	18
+#define LINE_H_11		12
+#define NUM_LINE_11		8
+
+#define LINE_H_16		17
+#define NUM_LINE_16		5
 
 uint8_t max_char_l;
+uint8_t charRemaining;
 
-uint8_t getNextLineIdx(char *words){
-	uint8_t numChar, numCharInt, offset;
+// Display helpers function, return the next number of chars that fit one line without cutting a word, depending on the used font
+// and the corresponding number of pixels for horizontal alignment
+uint8_t getNextLinePixelWidth(const char* text, bagl_font_t font_id, uint8_t* numChar){
+	uint8_t linePixelWidth, linePixelWidthInt, numCharInt;
+	linePixelWidth = 0;
 	numCharInt = 0;
-	while (*words++!='\0'){
+	*numChar = 0;
+	char ch = 1;
+	linePixelWidthInt = 0;
+
+	bagl_font_t *font = &font_id;
+
+	while (charRemaining-numCharInt>0){
+		ch = *((unsigned char*)text);
+		if ((ch==' ')||(ch==NULL)){
+			linePixelWidth = linePixelWidthInt;
+			*numChar = numCharInt;
+		}
+		if (linePixelWidthInt > IMG_WIDTH-18){
+			return linePixelWidth;
+		}
+		ch -= font->first_char;
+		linePixelWidthInt += font->characters[ch].char_width;
 		numCharInt++;
-		if (*words==' '){
-			numChar = numCharInt;
-		}
-		if (numCharInt > max_char_l){
-			return numChar + 1;
-		}
+		*text++;
 	}
-	return numCharInt;
+	return linePixelWidthInt;
 }
 
 
 void write_words(void){
-	
 	int bgcolor = 0x000000;
 	int fgcolor = 0xFFFFFF;
-
-	uint8_t nextLineIdx, curLineIdx, charRemaining;
-	curLineIdx = 0;
+	//uint8_t charRemainingDBG;
+	uint8_t nextLineIdx, linePixCnt, rowPixCnt, numLine, line;
+	uint8_t line_h;
+	bagl_font_t font;
 	charRemaining = G_bolos_ux_context.words_length; 
-	uint8_t line = 0;
-	if (charRemaining > MAX_CHAR_16){
-		//draw max 8 lines of 11 px font
-		max_char_l = MAX_CHAR_L_11;
-		while ((charRemaining)&&(line < IMG_HEIGHT)){
-			nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
-			memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
-			draw_string(fontFONT_11PX, fgcolor, bgcolor, 0,  line, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
-			strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
-			charRemaining -= nextLineIdx;
-			line += 12;
-		}		
+	line = 0;
+	numLine = 0;
+	//First check if words can fit in image with 16px font
+	charRemaining += 1; //include '\0'
+	strcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words);
+	while ((charRemaining>0)&&(line+LINE_H_16 < IMG_HEIGHT)){
+		linePixCnt = getNextLinePixelWidth(G_bolos_ux_context.string_buffer, fontFONT_16PX, &nextLineIdx);
+		strcpy(G_bolos_ux_context.string_buffer, &G_bolos_ux_context.string_buffer[nextLineIdx+1]);
+		charRemaining -= (nextLineIdx+1);
+		numLine++;
+		line+=LINE_H_16;
 	}
-	else {
-		// Draw max 5 lines of 16 px font 
-		max_char_l = MAX_CHAR_L_16;
-		while ((charRemaining)&&(line < IMG_HEIGHT)){
-			nextLineIdx = getNextLineIdx(G_bolos_ux_context.words);
-			memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words, nextLineIdx);
-			draw_string(fontFONT_16PX, fgcolor, bgcolor, 0,  line, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, nextLineIdx, BAGL_ENCODING_LATIN1);
-			strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx]);
-			charRemaining -= nextLineIdx;
-			line += 17;
+	line = 0;
+	//Chars remaining, words don't fit in image with 16px font > use 11px font
+	if (charRemaining !=0){
+		charRemaining = G_bolos_ux_context.words_length+1; // include \0 
+		numLine = 0;
+		line_h = LINE_H_11;
+		font = fontFONT_11PX;
+		strcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words);
+		while ((charRemaining>0)&&(line+LINE_H_11 < IMG_HEIGHT)){
+			linePixCnt = getNextLinePixelWidth(G_bolos_ux_context.string_buffer, fontFONT_11PX, &nextLineIdx);
+			strcpy(G_bolos_ux_context.string_buffer, &G_bolos_ux_context.string_buffer[nextLineIdx+1]);
+			charRemaining -= (nextLineIdx+1);
+			numLine++;
+			line+=LINE_H_11;
 		}
+		line = 0;
+	}
+	//No chars remaining, words are fitting with 16px font
+	else {					
+		line_h = LINE_H_16;
+		font = fontFONT_16PX;
+	}
+	// Write words in choosen font 
+	line+= (IMG_HEIGHT - numLine*line_h)/2;
+	charRemaining = G_bolos_ux_context.words_length+1; // include \0
+	while ((charRemaining>0)&&(line+line_h < IMG_HEIGHT)){
+		linePixCnt = getNextLinePixelWidth(G_bolos_ux_context.words, font, &nextLineIdx);
+		draw_string(font, fgcolor, bgcolor, (IMG_WIDTH-linePixCnt)/2,  line, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.words, nextLineIdx, BAGL_ENCODING_LATIN1);
+		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx+1]);
+		charRemaining -= (nextLineIdx+1);
+		// SPRINTF(G_bolos_ux_context.string_buffer, "%d %d %d %d\0", linePixCnt, numLine, nextLineIdx, charRemaining);
+		// draw_string(font, fgcolor, bgcolor, 0,  line, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, strlen(G_bolos_ux_context.string_buffer), BAGL_ENCODING_LATIN1);	
+		line += line_h;
 	}
 }
 

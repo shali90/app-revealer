@@ -40,7 +40,7 @@ const ux_menu_entry_t ui_idle_mainmenu_nanos_words_seed_valid[] = {
 };
 
 const ux_menu_entry_t ui_idle_mainmenu_nanos_all_valid[] = {
-  {NULL, NULL, 0, NULL, "Ready to", "Reveal <3", 32, 10},
+  {NULL, NULL, 0, NULL, "Revealer", "ready", 32, 10},
   {menu_about_nanos, NULL, 0, NULL, "About", NULL, 0, 0},
   {NULL, os_sched_exit, 0, &C_icon_dashboard, "Quit app", NULL, 50, 29},
   UX_MENU_END
@@ -163,6 +163,8 @@ void ui_idle_init(void) {
   //PRINTF("HELLO\n");
 
   if ((G_bolos_ux_context.noise_seed_valid == 1)&&(G_bolos_ux_context.words_seed_valid == 1)){
+    //Activate io
+    USB_power(1);
     UX_MENU_DISPLAY(0, ui_idle_mainmenu_nanos_all_valid, NULL);
   }
   else if (G_bolos_ux_context.noise_seed_valid == 1){
@@ -554,10 +556,11 @@ unsigned int ui_type_noise_seed_nanos_button(unsigned int button_mask,unsigned i
 }
 
 void revealer_struct_init(void){
-  os_memset(G_bolos_ux_context.noise_seed, '\0', 36);
-  os_memset(G_bolos_ux_context.string_buffer, '\0', MAX(64, sizeof(bagl_icon_details_t) +
+  os_memset(G_bolos_ux_context.noise_seed, NULL, 36);
+  os_memset(G_bolos_ux_context.string_buffer, NULL, MAX(64, sizeof(bagl_icon_details_t) +
                                    BOLOS_APP_ICON_SIZE_B -
                                    1));
+  os_memset(G_bolos_ux_context.words, NULL, SEED_SIZE);
   G_bolos_ux_context.typedDigitLen = 0;
   G_bolos_ux_context.offset = 7;
   #ifndef WORDS_IMG_DBG

@@ -36,7 +36,7 @@ extern enum UI_STATE uiState;
 
 ux_state_t ux;
 
-static unsigned char display_text_part(void);
+//static unsigned char display_text_part(void);
 
 #define MAX_CHARS_PER_LINE 49
 
@@ -80,7 +80,6 @@ static void sample_main(void) {
     revealer_struct_init();
     for (;;) {
     volatile unsigned short sw = 0;
-    //G_bolos_ux_context.revealer_image[0]=0;
 
     BEGIN_TRY {
       TRY {
@@ -103,7 +102,7 @@ static void sample_main(void) {
                 #ifndef WORDS_IMG_DBG
                 if ((G_bolos_ux_context.words_seed_valid)&&(G_bolos_ux_context.noise_seed_valid)){
                 #else
-                if (G_bolos_ux_context.words_seed_valid){
+                if (1){
                 #endif
                     row_nb = G_io_apdu_buffer[3];
                     tx += send_column(row_nb);
@@ -148,7 +147,7 @@ return_to_dashboard:
 }
 
 
-// Pick the text elements to display
+/*// Pick the text elements to display
 static unsigned char display_text_part() {
     unsigned int i;
     WIDE char *text = (char*) G_io_apdu_buffer + 5;
@@ -167,7 +166,7 @@ static unsigned char display_text_part() {
     lineBuffer[i] = '\0';
 
     return 1;
-}
+}*/
 
 
 unsigned char io_event(unsigned char channel) {
@@ -263,10 +262,13 @@ __attribute__((section(".boot"))) int main(void) {
 #endif
 
             USB_power(0);
-            USB_power(1);
-
-            //ui_idle();
             revealer_struct_init();
+            #ifdef WORDS_IMG_DBG
+                USB_power(1);
+                SPRINTF(G_bolos_ux_context.words, "day true right second damp text desert spray grit noise buyer screen heart toss loop frown battle dragon");
+                G_bolos_ux_context.words_length = strlen(G_bolos_ux_context.words);
+                write_words();
+            #endif
             ui_idle_init();
             sample_main();
         }
