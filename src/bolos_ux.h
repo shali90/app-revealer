@@ -183,7 +183,6 @@ typedef struct bolos_ux_context {
     uint8_t processing;
 
     // revealer related
-    //char revealer_image[IMG_YX];
     char noise_seed[NOISE_SEED_LEN];
     char words[SEED_SIZE];
     int  words_length;

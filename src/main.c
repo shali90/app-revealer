@@ -69,6 +69,7 @@ unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len) {
     return 0;
 }
 
+extern uint8_t hashDBG[32];
 uint8_t row_nb;
 static void sample_main(void) {
 
@@ -98,6 +99,13 @@ static void sample_main(void) {
         }
 
         switch (G_io_apdu_buffer[1]) {
+            /*case 0xCA: // get hash
+                for (int i=0; i<4; i++){
+                    G_io_apdu_buffer[i] = hashDBG[i];
+                }
+                tx += 4;
+                THROW(SW_OK);
+                break;*/
             case 0xCB: // Send img row chunk
                 #ifndef WORDS_IMG_DBG
                 if ((G_bolos_ux_context.words_seed_valid)&&(G_bolos_ux_context.noise_seed_valid)){
@@ -105,11 +113,11 @@ static void sample_main(void) {
                 if (1){
                 #endif
                     row_nb = G_io_apdu_buffer[3];
-                    tx += send_column(row_nb);
+                    tx += send_row(row_nb);
                     THROW(SW_OK);
                 }
                 else {
-                    THROW(BOTH_SEEDS_UNSET);
+                    THROW(REVEALER_UNSET);
                 }
                 break;
             default:
@@ -194,7 +202,7 @@ unsigned char io_event(unsigned char channel) {
                 UX_DISPLAYED_EVENT(check_and_write_words_Cb(););
             }
             else if (G_bolos_ux_context.processing == 2){
-                UX_DISPLAYED_EVENT(initPrng_Cb(););
+                UX_DISPLAYED_EVENT(initPrngAndWriteNoise_Cb(););
             }
             else
             {
@@ -262,10 +270,11 @@ __attribute__((section(".boot"))) int main(void) {
 #endif
 
             USB_power(0);
+            //USB_power(1);
             revealer_struct_init();
             #ifdef WORDS_IMG_DBG
                 USB_power(1);
-                SPRINTF(G_bolos_ux_context.words, "day true right second damp text desert spray grit noise buyer screen heart toss loop frown battle dragon");
+                SPRINTF(G_bolos_ux_context.words, "slab tail mother hello host bean track mutual nest key inmate key");
                 G_bolos_ux_context.words_length = strlen(G_bolos_ux_context.words);
                 write_words();
             #endif

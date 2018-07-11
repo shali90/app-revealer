@@ -18,7 +18,7 @@ const ux_menu_entry_t menu_about_nanos[] = {
     UX_MENU_END}; 
 
 const ux_menu_entry_t ui_idle_mainmenu_nanos[] = {
-  {NULL, ui_type_noise_seed_nanos_init, 0, /*&icon_hack*/NULL, "Type your", "noise seed", 32, 10},
+  {NULL, ui_type_noise_seed_nanos_init, 0, /*&icon_hack*/NULL, "Type your", "revealer code", 32, 10},
   //{NULL, screen_onboarding_3_restore_init, 0, /*&icon_hack*/NULL, "Type your", "seed words", 32, 10},
   {menu_about_nanos, NULL, 0, NULL, "About", NULL, 0, 0},
   {NULL, os_sched_exit, 0, &C_icon_dashboard, "Quit app", NULL, 50, 29},
@@ -33,14 +33,14 @@ const ux_menu_entry_t ui_idle_mainmenu_nanos_noise_seed_valid[] = {
 };
 
 const ux_menu_entry_t ui_idle_mainmenu_nanos_words_seed_valid[] = {
-  {NULL, ui_type_noise_seed_nanos_init, 0, NULL, "Type your", "noise seed", 32, 10},
+  {NULL, ui_type_noise_seed_nanos_init, 0, NULL, "Type your", "revealer code", 32, 10},
   {menu_about_nanos, NULL, 0, NULL, "About", NULL, 0, 0},
   {NULL, os_sched_exit, 0, &C_icon_dashboard, "Quit app", NULL, 50, 29},
   UX_MENU_END
 };
 
 const ux_menu_entry_t ui_idle_mainmenu_nanos_all_valid[] = {
-  {NULL, NULL, 0, NULL, "Revealer", "ready", 32, 10},
+  {NULL, NULL, 0, NULL, "Encrypted", "backup ready", 32, 10},
   {menu_about_nanos, NULL, 0, NULL, "About", NULL, 0, 0},
   {NULL, os_sched_exit, 0, &C_icon_dashboard, "Quit app", NULL, 50, 29},
   UX_MENU_END
@@ -368,7 +368,9 @@ unsigned int ui_noise_seed_final_compare_nanos_prepro(const  bagl_element_t* ele
 unsigned int ui_noise_seed_final_compare_nanos_button(unsigned int button_mask,unsigned int button_mask_counter) {
   switch (button_mask) {
   case BUTTON_EVT_RELEASED|BUTTON_LEFT|BUTTON_RIGHT:
-      ui_idle_init();
+      G_bolos_ux_context.processing = 2;
+      display_processing_screen();
+      // ui_idle_init();
       break;
   default:
       break;
@@ -531,20 +533,20 @@ unsigned int ui_type_noise_seed_nanos_button(unsigned int button_mask,unsigned i
           G_bolos_ux_context.typedDigitLen++;
           G_bolos_ux_context.offset = 7;
           if (G_bolos_ux_context.typedDigitLen == 36){
-            display_processing_screen();
-            G_bolos_ux_context.processing = 2;
-            /*if (isNoise(G_bolos_ux_context.noise_seed,33)){
+            //display_processing_screen();
+            //G_bolos_ux_context.processing = 2;
+            if (isNoise(G_bolos_ux_context.noise_seed,33)){
               G_bolos_ux_context.noise_seed_valid = 1;
               //ui_type_noise_seed_nanos_validate();
               //display_processing_screen();
-              G_bolos_ux_context.processing = 2;
+              //G_bolos_ux_context.processing = 2;
               //UX_DISPLAY(ui_processing, ui_processing_before_element_display_callback);
             }
             else {
               G_bolos_ux_context.noise_seed_valid = 0;             
             }
             //ui_idle_init();
-            UX_DISPLAY(ui_noise_seed_final_compare_nanos, ui_noise_seed_final_compare_nanos_prepro);*/
+            UX_DISPLAY(ui_noise_seed_final_compare_nanos, ui_noise_seed_final_compare_nanos_prepro);
           }
           break;
       }        
@@ -576,35 +578,12 @@ void ui_type_noise_seed_nanos_init(void){
   UX_DISPLAY(ui_type_noise_seed_nanos,ui_type_noise_seed_nanos_prepro);
 }
 
-void initPrng_Cb(void){
+
+void initPrngAndWriteNoise_Cb(void){
   G_bolos_ux_context.processing = 0;
   io_seproxyhal_general_status();
-  if (isNoise(G_bolos_ux_context.noise_seed,33)){
-    G_bolos_ux_context.noise_seed_valid = 1;
-    noiseSeedToKey();
-    init_by_array(4);
-    write_noise();
-  }
-  else {
-    G_bolos_ux_context.noise_seed_valid = 0;
-  }
-  UX_DISPLAY(ui_noise_seed_final_compare_nanos, ui_noise_seed_final_compare_nanos_prepro);
+  noiseSeedToKey();
+  init_by_array(4);
+  write_noise();
+  ui_idle_init();
 }
-
-/*void send_column_Cb(uint8_t nb){
-  io_seproxyhal_general_status();
-
-  if (nb == IMG_WIDTH-1){
-    G_bolos_ux_context.processing = 0;
-    UX_DISPLAY(ui_revealer_final, ui_revealer_final_prepro);
-  }
-  else {
-    G_bolos_ux_context.processing = 3;
-    //UX_DISPLAY(ui_revealer_in_progress, ui_revealer_in_progress_prepro);
-    //THROW(SW_OK);
-  }
-  //UX_MENU_DISPLAY(0, ui_idle_mainmenu_nanos_all_valid, NULL);
-  //io_seproxyhal_general_status();
-  //ui_idle_init();
-  //THROW(SW_OK);
-}*/

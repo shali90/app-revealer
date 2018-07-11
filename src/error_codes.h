@@ -1,5 +1,3 @@
 #define SW_OK 				0x9000
-#define BOTH_SEEDS_UNSET	0x6FF0	
-#define NOISE_SEED_NOT_SET  0x6FF1
-#define SEED_WORDS_NOT_SET  0x6FF2
+#define REVEALER_UNSET		0x6FF0	
 #define DENIED_BY_USER 		0x6985

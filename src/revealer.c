@@ -2,6 +2,7 @@
 #include "ux_nanos.h"
 #include "font.h"
 #include "cx.h"
+//#include "stdlib.h"
 
 WIDE internalStorage_t N_storage_real;
 #define N_storage (*(WIDE internalStorage_t *)PIC(&N_storage_real)) 
@@ -9,16 +10,75 @@ WIDE internalStorage_t N_storage_real;
 
 uint8_t isNoise(char * string, uint8_t hashPos){
 	uint8_t computedHash[32];
-
+	uint8_t hashIdCMP[4];
+	int hashId = 0;
+	
 	cx_sha256_t context;
 	cx_sha256_init(&context);
 	cx_hash(&context,CX_LAST,string,hashPos,computedHash, 32);
 
-	if ((0x0F & computedHash[30]) == (0x0F & *(string+hashPos)) && \
-        (computedHash[31]>>4)     == (0x0F & *(string+hashPos+1)) && \
-        (0x0F & computedHash[31]) == (0x0F & *(string+hashPos+2))){
+	for (uint8_t n=0; n<3; n++){
+		switch (string[n+hashPos]){
+			case '0':
+				hashId += 0<<4*(2-n);
+				break;	
+			case '1':
+				hashId += 1<<4*(2-n);
+				break;	
+			case '2':
+				hashId += 2<<4*(2-n);
+				break;	
+			case '3':
+				hashId += 3<<4*(2-n);
+				break;	
+			case '4':
+				hashId += 4<<4*(2-n);
+				break;	
+			case '5':
+				hashId += 5<<4*(2-n);
+				break;	
+			case '6':
+			    hashId += 6<<4*(2-n);
+				break;	
+			case '7':
+				hashId += 7<<4*(2-n);
+				break;	
+			case '8':
+				hashId += 8<<4*(2-n);
+				break;	
+			case '9':
+				hashId += 9<<4*(2-n);
+				break;	
+			case 'a':
+				hashId += 10<<4*(2-n);
+				break;	
+			case 'b':
+				hashId += 11<<4*(2-n);
+				break;	
+			case 'c':
+				hashId += 12<<4*(2-n);
+				break;	
+			case 'd':
+				hashId += 13<<4*(2-n);
+				break;	
+			case 'e':
+				hashId += 14<<4*(2-n);
+				break;	
+			case 'f':
+				hashId += 15<<4*(2-n);
+				break;	
+		}
+	}
+	hashIdCMP[0] = computedHash[30]&0x0F;
+	hashIdCMP[1] = computedHash[31];
+	hashIdCMP[2] = (hashId>>8)&0x000F;
+	hashIdCMP[3] = hashId&0x00FF;
+	// Comparison fails if not using intermediary hashIdCMP
+	// Invalid cast ?? TODO remove hashIdCMP and replace by valid compare
+	if ((hashIdCMP[0] == hashIdCMP[2])&&(hashIdCMP[1] == hashIdCMP[3])){
+		// Noise seed is Valid
 		return 1;
-    }	
+	}
 	return 0;
 }
 
@@ -445,14 +505,14 @@ int draw_string(bagl_font_t font_id, unsigned int fgcolor, unsigned int bgcolor,
 uint8_t max_char_l;
 uint8_t charRemaining;
 
-// Display helpers function, return the next number of chars that fit one line without cutting a word, depending on the used font
-// and the corresponding number of pixels for horizontal alignment
+// Display helpers function, computes the next number of chars that fit one line without cutting a word, depending on the used font
+// and returns the corresponding number of pixels for horizontal alignment
 uint8_t getNextLinePixelWidth(const char* text, bagl_font_t font_id, uint8_t* numChar){
 	uint8_t linePixelWidth, linePixelWidthInt, numCharInt;
 	linePixelWidth = 0;
 	numCharInt = 0;
 	*numChar = 0;
-	char ch = 1;
+	char ch;
 	linePixelWidthInt = 0;
 
 	bagl_font_t *font = &font_id;
@@ -463,6 +523,7 @@ uint8_t getNextLinePixelWidth(const char* text, bagl_font_t font_id, uint8_t* nu
 			linePixelWidth = linePixelWidthInt;
 			*numChar = numCharInt;
 		}
+		// -18 t0 add 9*2 pixels on left and right
 		if (linePixelWidthInt > IMG_WIDTH-18){
 			return linePixelWidth;
 		}
@@ -523,7 +584,7 @@ void write_words(void){
 	while ((charRemaining>0)&&(line+line_h < IMG_HEIGHT)){
 		linePixCnt = getNextLinePixelWidth(G_bolos_ux_context.words, font, &nextLineIdx);
 		draw_string(font, fgcolor, bgcolor, (IMG_WIDTH-linePixCnt)/2,  line, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.words, nextLineIdx, BAGL_ENCODING_LATIN1);
-		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx+1]);
+		strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx+1]); // Dump space char
 		charRemaining -= (nextLineIdx+1);
 		// SPRINTF(G_bolos_ux_context.string_buffer, "%d %d %d %d\0", linePixCnt, numLine, nextLineIdx, charRemaining);
 		// draw_string(font, fgcolor, bgcolor, 0,  line, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, strlen(G_bolos_ux_context.string_buffer), BAGL_ENCODING_LATIN1);	
@@ -545,12 +606,12 @@ void write_noise(void){
 			}
 			nvm_write(&N_storage.revealer_image[YX], (uint8_t *)&val, sizeof(uint8_t));
 		}
-		//dump last pixel
+		//IMG_HEIGHT = 97 = 12*8+1 => dump last pixel 
 		random_getrandbits(2);
 	}
 }
 
-int send_column(int x){
+int send_row(int x){
 	int YX;
 	uint8_t idx;
 	idx = 0;
