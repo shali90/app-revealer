@@ -18,10 +18,10 @@ $ make all load
 # Generating revealer
 - Open the app on your Nano S
 - Navigate to "Type your noise seed" menu
-- Type your noise seed (noise seed is the number provided with your revealer card), use left/right button to szitch digits, and both buttons to validate digit
+- Type your noise seed (noise seed is the number provided with your revealer card), use left/right button to switch digits, and both buttons to validate digit.
 - Navigate to "Type your seed words" menu, choose the number of words, type your words
 
-Once both noise seed and words are set, you can launch python revelaer script
+Once both noise seed and words are set, you can launch python revealer script
 ```sh
 $ python revealer.py --apdu
 ```
