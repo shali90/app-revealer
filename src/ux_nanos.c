@@ -295,8 +295,8 @@ unsigned int ui_revealer_final_button(unsigned int button_mask,unsigned int butt
   }
 }*/
 
-#define PIN_DIGIT_LEN 17
-static const char C_pin_digit[] = {'0','1','2','3','4','5','6','7','8','9','a','b','c', 'd', 'e', 'f', '<',};
+#define PIN_DIGIT_LEN 18
+static const char C_pin_digit[] = {'0','1','2','3','4','5','6','7','8','9','a','b','c', 'd', 'e', 'f', '<','V'};
 
 const bagl_element_t ui_noise_seed_final_compare_nanos[] = {
     // erase
@@ -516,7 +516,7 @@ unsigned int ui_type_noise_seed_nanos_button(unsigned int button_mask,unsigned i
       }
       break;
 
-  case BUTTON_EVT_RELEASED | BUTTON_RIGHT:  
+  case BUTTON_EVT_RELEASED | BUTTON_RIGHT:
       //confirm
       G_bolos_ux_context.offset = (G_bolos_ux_context.offset+1)%PIN_DIGIT_LEN;
       //seed_display_confirm();
@@ -531,6 +531,24 @@ unsigned int ui_type_noise_seed_nanos_button(unsigned int button_mask,unsigned i
             //G_bolos_ux_context.string_buffer[G_bolos_ux_context.typedDigitLen] = '_';              
           }
           G_bolos_ux_context.offset = G_bolos_ux_context.typedDigitLen == 0 ? 7:PIN_DIGIT_LEN-1;
+          break;
+        case 'V':
+          if (G_bolos_ux_context.typedDigitLen == 35){
+            //display_processing_screen();
+            //G_bolos_ux_context.processing = 2;
+            if (isNoise(G_bolos_ux_context.noise_seed,32)){
+              G_bolos_ux_context.noise_seed_valid = 1;
+              //ui_type_noise_seed_nanos_validate();
+              //display_processing_screen();
+              //G_bolos_ux_context.processing = 2;
+              //UX_DISPLAY(ui_processing, ui_processing_before_element_display_callback);
+            }
+            else {
+              G_bolos_ux_context.noise_seed_valid = 0;             
+            }
+            //ui_idle_init();
+          }
+          UX_DISPLAY(ui_noise_seed_final_compare_nanos, ui_noise_seed_final_compare_nanos_prepro);
           break;
         default:                    
           G_bolos_ux_context.noise_seed[G_bolos_ux_context.typedDigitLen] = C_pin_digit[G_bolos_ux_context.offset];
