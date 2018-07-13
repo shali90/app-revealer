@@ -368,9 +368,13 @@ unsigned int ui_noise_seed_final_compare_nanos_prepro(const  bagl_element_t* ele
 unsigned int ui_noise_seed_final_compare_nanos_button(unsigned int button_mask,unsigned int button_mask_counter) {
   switch (button_mask) {
   case BUTTON_EVT_RELEASED|BUTTON_LEFT|BUTTON_RIGHT:
-      G_bolos_ux_context.processing = 2;
-      display_processing_screen();
-      // ui_idle_init();
+      if (G_bolos_ux_context.noise_seed_valid){
+        G_bolos_ux_context.processing = 2;
+        display_processing_screen();
+      }
+      else {
+        ui_idle_init();                
+      }
       break;
   default:
       break;
