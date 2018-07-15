@@ -12,62 +12,14 @@ uint8_t isNoise(char * string, uint8_t hashPos){
 	uint8_t computedHash[32];
 	uint8_t hashIdCMP[4];
 	int hashId = 0;
+	uint8_t digit;
 	
 	cx_sha256_t context;
 	cx_sha256_init(&context);
 	cx_hash(&context,CX_LAST,string,hashPos,computedHash, 32);
 
 	for (uint8_t n=0; n<3; n++){
-		switch (string[n+hashPos]){
-			case '0':
-				hashId += 0<<4*(2-n);
-				break;	
-			case '1':
-				hashId += 1<<4*(2-n);
-				break;	
-			case '2':
-				hashId += 2<<4*(2-n);
-				break;	
-			case '3':
-				hashId += 3<<4*(2-n);
-				break;	
-			case '4':
-				hashId += 4<<4*(2-n);
-				break;	
-			case '5':
-				hashId += 5<<4*(2-n);
-				break;	
-			case '6':
-			    hashId += 6<<4*(2-n);
-				break;	
-			case '7':
-				hashId += 7<<4*(2-n);
-				break;	
-			case '8':
-				hashId += 8<<4*(2-n);
-				break;	
-			case '9':
-				hashId += 9<<4*(2-n);
-				break;	
-			case 'a':
-				hashId += 10<<4*(2-n);
-				break;	
-			case 'b':
-				hashId += 11<<4*(2-n);
-				break;	
-			case 'c':
-				hashId += 12<<4*(2-n);
-				break;	
-			case 'd':
-				hashId += 13<<4*(2-n);
-				break;	
-			case 'e':
-				hashId += 14<<4*(2-n);
-				break;	
-			case 'f':
-				hashId += 15<<4*(2-n);
-				break;	
-		}
+		hashId += (string[n+hashPos] >= 0x30)&&(string[n+hashPos] <= 0x39)?(string[n+hashPos] - 0x30)<<4*(2-n):(string[n+hashPos] - 0x57)<<4*(2-n);
 	}
 	hashIdCMP[0] = computedHash[30]&0x0F;
 	hashIdCMP[1] = computedHash[31];
