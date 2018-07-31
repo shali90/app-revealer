@@ -274,7 +274,10 @@ __attribute__((section(".boot"))) int main(void) {
             revealer_struct_init();
             #ifdef WORDS_IMG_DBG
                 USB_power(1);
-                SPRINTF(G_bolos_ux_context.words, "slab tail mother hello host bean track mutual nest key inmate key");
+                // SPRINTF(G_bolos_ux_context.words, "fiscal price law neutral script buyer desert join load venue crucial cloth"); // bug last line 18px font
+                SPRINTF(G_bolos_ux_context.words, "sadness they ceiling trash size skull critic shy toddler never man drastic");
+                // SPRINTF(G_bolos_ux_context.words, "feel miracle entry dust love drink kit what insane river blush pitch"); // bug last line 18px font
+                // SPRINTF(G_bolos_ux_context.words, "toto tata titi tutu tete toto tata titi tutu tete");
                 G_bolos_ux_context.words_length = strlen(G_bolos_ux_context.words);
                 write_words();
             #endif

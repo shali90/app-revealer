@@ -18,7 +18,7 @@ const ux_menu_entry_t menu_about_nanos[] = {
     UX_MENU_END}; 
 
 const ux_menu_entry_t ui_idle_mainmenu_nanos[] = {
-  {NULL, ui_type_noise_seed_nanos_init, 0, /*&icon_hack*/NULL, "Type your", "revealer code", 32, 10},
+  {NULL, ui_type_noise_seed_nanos_init, 0, &C_badge_revealer, "Type your", "revealer code", 32, 10},
   //{NULL, screen_onboarding_3_restore_init, 0, /*&icon_hack*/NULL, "Type your", "seed words", 32, 10},
   {menu_about_nanos, NULL, 0, NULL, "About", NULL, 0, 0},
   {NULL, os_sched_exit, 0, &C_icon_dashboard, "Quit app", NULL, 50, 29},
@@ -26,21 +26,21 @@ const ux_menu_entry_t ui_idle_mainmenu_nanos[] = {
 };
 
 const ux_menu_entry_t ui_idle_mainmenu_nanos_noise_seed_valid[] = {
-  {NULL, screen_onboarding_3_restore_init, 0, /*&icon_hack*/NULL, "Type your", "seed words", 32, 10},
+  {NULL, screen_onboarding_3_restore_init, 0, &C_badge_revealer, "Type your", "seed words", 32, 10},
   {menu_about_nanos, NULL, 0, NULL, "About", NULL, 0, 0},
   {NULL, os_sched_exit, 0, &C_icon_dashboard, "Quit app", NULL, 50, 29},
   UX_MENU_END
 };
 
 const ux_menu_entry_t ui_idle_mainmenu_nanos_words_seed_valid[] = {
-  {NULL, ui_type_noise_seed_nanos_init, 0, NULL, "Type your", "revealer code", 32, 10},
+  {NULL, ui_type_noise_seed_nanos_init, 0, &C_badge_revealer, "Type your", "revealer code", 32, 10},
   {menu_about_nanos, NULL, 0, NULL, "About", NULL, 0, 0},
   {NULL, os_sched_exit, 0, &C_icon_dashboard, "Quit app", NULL, 50, 29},
   UX_MENU_END
 };
 
 const ux_menu_entry_t ui_idle_mainmenu_nanos_all_valid[] = {
-  {NULL, NULL, 0, NULL, "Encrypted", "backup ready", 32, 10},
+  {NULL, NULL, 0, &C_badge_revealer, "Encrypted", "backup ready", 32, 10},
   {menu_about_nanos, NULL, 0, NULL, "About", NULL, 0, 0},
   {NULL, os_sched_exit, 0, &C_icon_dashboard, "Quit app", NULL, 50, 29},
   UX_MENU_END
@@ -429,6 +429,7 @@ unsigned int ui_type_noise_seed_nanos_prepro(const  bagl_element_t* element){
       //memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.noise_seed[G_bolos_ux_context.typedDigitLen-MAX_CHAR_PER_LINE], 16);
       G_bolos_ux_context.string_buffer[16] = '\0';
       G_bolos_ux_context.string_buffer[15] = C_pin_digit[G_bolos_ux_context.offset];
+      //G_bolos_ux_context.string_buffer[15] = &C_icon_validate;      
       int j = G_bolos_ux_context.typedDigitLen-1;
       for (int i=14; i>=0; i--){
         G_bolos_ux_context.string_buffer[i] = G_bolos_ux_context.noise_seed[j--];
@@ -437,10 +438,8 @@ unsigned int ui_type_noise_seed_nanos_prepro(const  bagl_element_t* element){
       }
     }
     else{
-      G_bolos_ux_context.string_buffer[G_bolos_ux_context.typedDigitLen] = C_pin_digit[G_bolos_ux_context.offset];  
-      /*if (G_bolos_ux_context.typedDigitLen >0){
-        G_bolos_ux_context.string_buffer[G_bolos_ux_context.typedDigitLen+1] = '_';
-      }*/ 
+      // G_bolos_ux_context.string_buffer[G_bolos_ux_context.typedDigitLen] = C_pin_digit[G_bolos_ux_context.offset];  
+      G_bolos_ux_context.string_buffer[G_bolos_ux_context.typedDigitLen] = C_pin_digit[G_bolos_ux_context.offset]; 
     }    
   }
   return 1;
@@ -509,7 +508,12 @@ unsigned int ui_type_noise_seed_nanos_button(unsigned int button_mask,unsigned i
   switch (button_mask) {
   case BUTTON_EVT_RELEASED | BUTTON_LEFT:
       if (G_bolos_ux_context.offset == 0){
-        G_bolos_ux_context.offset = G_bolos_ux_context.typedDigitLen == 0 ? PIN_DIGIT_LEN-2:PIN_DIGIT_LEN-1;
+        if (G_bolos_ux_context.typedDigitLen < 35){
+          G_bolos_ux_context.offset = G_bolos_ux_context.typedDigitLen == 0 ? PIN_DIGIT_LEN-3:PIN_DIGIT_LEN-2;          
+        }
+        else {
+          G_bolos_ux_context.offset = G_bolos_ux_context.typedDigitLen == 0 ? PIN_DIGIT_LEN-2:PIN_DIGIT_LEN-1;
+        }
       }
       else {
         G_bolos_ux_context.offset = G_bolos_ux_context.offset-1;
@@ -518,25 +522,32 @@ unsigned int ui_type_noise_seed_nanos_button(unsigned int button_mask,unsigned i
 
   case BUTTON_EVT_RELEASED | BUTTON_RIGHT:
       //confirm
-      G_bolos_ux_context.offset = (G_bolos_ux_context.offset+1)%PIN_DIGIT_LEN;
+      //G_bolos_ux_context.offset = (G_bolos_ux_context.offset+1)%PIN_DIGIT_LEN;
+      if (G_bolos_ux_context.typedDigitLen < 35){
+        G_bolos_ux_context.offset = G_bolos_ux_context.typedDigitLen == 0 ? (G_bolos_ux_context.offset+1)%(PIN_DIGIT_LEN-2):(G_bolos_ux_context.offset+1)%(PIN_DIGIT_LEN-1);
+        // G_bolos_ux_context.offset = (G_bolos_ux_context.offset+1)%(PIN_DIGIT_LEN-1);         
+      }
+      else {
+        G_bolos_ux_context.offset = (G_bolos_ux_context.offset+1)%PIN_DIGIT_LEN;
+      }
       //seed_display_confirm();
       break;
 
   case BUTTON_EVT_RELEASED|BUTTON_LEFT|BUTTON_RIGHT:
       switch (C_pin_digit[G_bolos_ux_context.offset]){
-        case '<':
+        case '<': //Erase
           if (G_bolos_ux_context.typedDigitLen > 0){
             G_bolos_ux_context.string_buffer[G_bolos_ux_context.typedDigitLen] = '\0';
             G_bolos_ux_context.typedDigitLen--;
             //G_bolos_ux_context.string_buffer[G_bolos_ux_context.typedDigitLen] = '_';              
           }
-          G_bolos_ux_context.offset = G_bolos_ux_context.typedDigitLen == 0 ? 7:PIN_DIGIT_LEN-1;
+          G_bolos_ux_context.offset = G_bolos_ux_context.typedDigitLen == 0 ? 7:PIN_DIGIT_LEN-2;
           break;
-        case 'V':
-          if (G_bolos_ux_context.typedDigitLen == 35){
+        case 'V': //Validate noise seed
+          //if (G_bolos_ux_context.typedDigitLen == 35){
             //display_processing_screen();
             //G_bolos_ux_context.processing = 2;
-            if (isNoise(G_bolos_ux_context.noise_seed,32)){
+            if (isNoise(G_bolos_ux_context.noise_seed,G_bolos_ux_context.typedDigitLen-3)){
               G_bolos_ux_context.noise_seed_valid = 1;
               //ui_type_noise_seed_nanos_validate();
               //display_processing_screen();
@@ -547,7 +558,7 @@ unsigned int ui_type_noise_seed_nanos_button(unsigned int button_mask,unsigned i
               G_bolos_ux_context.noise_seed_valid = 0;             
             }
             //ui_idle_init();
-          }
+          //}
           UX_DISPLAY(ui_noise_seed_final_compare_nanos, ui_noise_seed_final_compare_nanos_prepro);
           break;
         default:                    

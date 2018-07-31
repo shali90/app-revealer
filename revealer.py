@@ -343,7 +343,8 @@ class Revealer(QWidget):
             self.updateColumn(img,result,i, False)
             #if args.apdu:
             #    print("<= Clear " + str(result))
-
+        
+        #img.save(self.base_dir+ '/test.png')
         cypher = self.pixelcode_2x2(img)
         cypher.invertPixels()
         cypher = self.overlay_marks(cypher)

@@ -40,8 +40,11 @@ typedef struct internalStorage_t {
 extern WIDE internalStorage_t N_storage_real;
 #define N_storage (*(WIDE internalStorage_t *)PIC(&N_storage_real))
 
-#define BAGL_FONT_FONT_11PX 0x00
-#define BAGL_FONT_FONT_16PX 0x01
+#define BAGL_FONT_FONT_LIGHT_16PX 0x00
+#define BAGL_FONT_FONT_LIGHT_11PX 0x01
+#define BAGL_FONT_FONT_SEMIBOLD_18PX 0x02
+#define BAGL_FONT_FONT_BOLD_13PX 0x03
+#define BAGL_FONT_FONT_EXTRABOLD_11PX 0x04
 
 // Checks wether user entered noise seed is valid, last 3 chars of noise seed are last 3 char of hash(noise_seed)
 uint8_t isNoise(char * string, uint8_t hashPos);
