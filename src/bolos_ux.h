@@ -181,9 +181,11 @@ typedef struct bolos_ux_context {
     // for CheckSeed app only
     uint8_t input_seed_is_identical;
     uint8_t processing;
-
     // revealer related
     char noise_seed[NOISE_SEED_LEN];
+    char noise_seed_bytearray[NOISE_SEED_LEN/2];
+    uint8_t hmac_drbg_key[64];
+    uint8_t hmac_drbg_val[64];
     char words[SEED_SIZE];
     int  words_length;
     uint8_t typedDigitLen;

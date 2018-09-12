@@ -2,11 +2,9 @@
 #include "ux_nanos.h"
 #include "font.h"
 #include "cx.h"
-//#include "stdlib.h"
 
 WIDE internalStorage_t N_storage_real;
 #define N_storage (*(WIDE internalStorage_t *)PIC(&N_storage_real)) 
-
 
 uint8_t isNoise(char * string, uint8_t hashPos){
   uint8_t computedHash[32];
@@ -34,134 +32,142 @@ uint8_t isNoise(char * string, uint8_t hashPos){
   return 0;
 }
 
-// test noise seed
-// static const char  seed[] = "0eca2c8cfa19be8a64a7d76772253ac07";
+uint8_t hexStringToByteArray(char* string, uint8_t slength, uint8_t* byteArray) {
+    if(string == NULL) 
+       return 0;
+    if((slength % 2) != 0) // must be even
+       return 0;
 
-void noiseSeedToKey(void){
-  uint8_t byte = 0;
-  uint8_t offset = 32;
-  uint8_t shift = 0;
-  uint8_t i = 0;
-  uint32_t val = 0x00000000;
+    memset(byteArray, 0x00, 18);
+    size_t dlength = slength / 2;
+    size_t index = 0;
 
-  nvm_write(N_storage.key, (uint32_t *)&val, KEY_LEN * sizeof(uint32_t));
-  for (i = 0; i < KEY_LEN-1; i++){
-    //nvm_write(&N_storage.mt[0], (uint32_t *)&s, sizeof(uint32_t));
-    val = 0x00000000;
-        shift = 0;
-    for (uint8_t j = offset-8*i; j > offset-8*i - 8; j--){
-      byte = G_bolos_ux_context.noise_seed[j];
-      if (byte >= '0' && byte <= '9') byte = byte - '0';
-          else if (byte >= 'a' && byte <='f') byte = byte - 'a' + 10;
-          val += (byte&0x0F) << shift*4;
-          shift++;
-    }
-    nvm_write(&N_storage.key[i], (uint32_t *)&val, sizeof(uint32_t));
-  }
-  byte = G_bolos_ux_context.noise_seed[0];
-  byte == (byte >= '0' && byte <= '9')?byte - '0':byte - 'a' + 10;
-  val = (byte&0x0F);
-  nvm_write(&N_storage.key[4], (uint32_t *)&val, sizeof(uint32_t));
-
-  val = 5;
-  for (i=4; i>=0; i--){
-    if (N_storage.key[i]==0x00000000){
-      val--;
-    }
-    else {
-      break;
-    }
-  }
-  nvm_write(&N_storage.key_len, (uint32_t *)&val, sizeof(uint32_t));
-}
-
-void init_prng(uint32_t s){
-    uint32_t mti;
-    uint32_t val;
-    nvm_write(&N_storage.mt[0], (uint32_t *)&s, sizeof(uint32_t));
-    for (mti=1; mti<N; mti++) {
-        val = (1812433253U * (N_storage.mt[mti-1] ^ (N_storage.mt[mti-1] >> 30)) + mti);
-        nvm_write(&N_storage.mt[mti], (uint32_t *)&val, sizeof(uint32_t));
-    }
-    nvm_write(&N_storage.index, (uint32_t *)&mti, sizeof(uint32_t));
-}
-
-void init_by_array(uint8_t key_length){
-  uint32_t i, j, k, val;
-  init_prng(19650218U);
-  i = 1;
-  j = 0;
-  k = (N>key_length ? N : key_length);
-  for (; k; k--) {
-        val = (N_storage.mt[i] ^ ((N_storage.mt[i-1] ^ (N_storage.mt[i-1] >> 30)) * 1664525U)) + N_storage.key[j] + (uint32_t)j;
-        nvm_write(&N_storage.mt[i], (uint32_t *)&val, sizeof(uint32_t));
-        i++; 
-        j++;
-        if (i>=N) {
-          val = N_storage.mt[N-1]; 
-          nvm_write(&N_storage.mt[0], (uint32_t *)&val, sizeof(uint32_t));
-          i=1;
-        }
-        if (j>=key_length) j=0;
-    }
-    for (k=N-1; k; k--) {
-        val = (N_storage.mt[i] ^ ((N_storage.mt[i-1] ^ (N_storage.mt[i-1] >> 30)) * 1566083941U)) - (uint32_t)i;
-        nvm_write(&N_storage.mt[i], (uint32_t *)&val, sizeof(uint32_t)); 
-        i++;
-        if (i>=N) {
-          val = N_storage.mt[N-1];
-          nvm_write(&N_storage.mt[0], (uint32_t *)&val, sizeof(uint32_t)); 
-          i=1; 
-        }
-    }
-    val = 0x80000000U;
-    nvm_write(&N_storage.mt[0], (uint32_t *)&val, sizeof(uint32_t));
-}
-
-uint32_t genrand_int32(void){
-  uint32_t y, val;
-  static const uint32_t mag01[2] = {0x0U, MATRIX_A};
-
-  if (N_storage.index >=N){
-    int kk;
-    for (kk=0;kk<N-M;kk++) {
-            y = (N_storage.mt[kk]&UPPER_MASK)|(N_storage.mt[kk+1]&LOWER_MASK);
-            val = N_storage.mt[kk+M] ^ (y >> 1) ^ mag01[y & 0x1U];
-            nvm_write(&N_storage.mt[kk], (uint32_t *)&val, sizeof(uint32_t));
-        }
-        for (;kk<N-1;kk++) {
-            y = (N_storage.mt[kk]&UPPER_MASK)|(N_storage.mt[kk+1]&LOWER_MASK);
-            val = N_storage.mt[kk+(M-N)] ^ (y >> 1) ^ mag01[y & 0x1U];
-            nvm_write(&N_storage.mt[kk], (uint32_t *)&val, sizeof(uint32_t));
-        }
+    while (index < slength) {
+        char c = string[index];
+        int value = 0;
+        if(c >= '0' && c <= '9')
+          value = (c - '0');
+        else if (c >= 'A' && c <= 'F') 
+          value = (10 + (c - 'A'));
+        else if (c >= 'a' && c <= 'f')
+          value = (10 + (c - 'a'));
         
-        y = (N_storage.mt[N-1]&UPPER_MASK)|(N_storage.mt[0]&LOWER_MASK);
-        val = N_storage.mt[M-1] ^ (y >> 1) ^ mag01[y & 0x1U];
-        nvm_write(&N_storage.mt[N-1], (uint32_t *)&val, sizeof(uint32_t));
-        val = 0;
-        nvm_write(&N_storage.index, (uint32_t *)&val, sizeof(uint32_t));
-  }
-  val = N_storage.index;
-  y = N_storage.mt[val++];
-  nvm_write(&N_storage.index, (uint32_t *)&val, sizeof(uint32_t));
-    y ^= (y >> 11);
-    y ^= (y << 7) & 0x9d2c5680U;
-    y ^= (y << 15) & 0xefc60000U;
-    y ^= (y >> 18);
-  return y;
+        byteArray[(index/2)] += value << (((index + 1) % 2) * 4);
+
+        index++;
+    }
+    return 1;
 }
 
-uint8_t random_getrandbits(uint8_t k){
-  uint8_t ret;
-  do {
-    ret = (uint8_t)(genrand_int32()>>32-k);   
-  }while (ret >1);
-  return ret;
+void drbg_reseed(uint8_t * data, uint8_t dataPresent){
+  uint8_t key_out[64];
+  uint8_t val_out[64];
+  uint8_t val_in[64+1];
+  uint8_t valData_in[64+1+18];
+
+  if (dataPresent){
+    memcpy(valData_in,G_bolos_ux_context.hmac_drbg_val, 64);
+    valData_in[64] = 0x00;
+    memcpy(&valData_in[65], data, 18);
+    cx_hmac_sha512(G_bolos_ux_context.hmac_drbg_key, 64, valData_in, 64+1+18, key_out, 64);
+    cx_hmac_sha512(key_out, 64, G_bolos_ux_context.hmac_drbg_val, 64, val_out, 64);
+    
+    memcpy(valData_in,val_out, 64);
+    valData_in[64] = 0x01;
+    memcpy(&valData_in[65], data, 18);
+    cx_hmac_sha512(key_out, 64, valData_in, 64+1+18, key_out, 64);
+    cx_hmac_sha512(key_out, 64, valData_in, 64, val_out, 64);
+  }
+  else{
+
+  }
+  memcpy(G_bolos_ux_context.hmac_drbg_key, key_out, 64);
+  memcpy(G_bolos_ux_context.hmac_drbg_val, val_out, 64);
+  // PRINTF("%.*h\n", 5, G_bolos_ux_context.hmac_drbg_val);
+}
+
+void drbg_hmac_init(void){
+  uint8_t noise_seed_processed[36];
+  // init key and val arrays
+  memset(G_bolos_ux_context.hmac_drbg_key, 0x00, 64);
+  memset(G_bolos_ux_context.hmac_drbg_val, 0x01, 64);
+  // revealer seed bytes permutation, fist byte (should be 1, for algo version), is inserted at 32th index
+  memcpy(noise_seed_processed,      &G_bolos_ux_context.noise_seed[1],  32);
+  memcpy(&noise_seed_processed[32], G_bolos_ux_context.noise_seed,      1);
+  memcpy(&noise_seed_processed[33], &G_bolos_ux_context.noise_seed[33], 3);
+  // Convert noise seed (hexstring) to byte array
+  if (hexStringToByteArray(noise_seed_processed, 36, G_bolos_ux_context.noise_seed_bytearray)){
+    PRINTF("%.*h \n", 18, G_bolos_ux_context.noise_seed_bytearray);
+  }
+  else {
+    PRINTF("CONVERT ERROR\n");
+    // THROW(0x6900);
+  }
+}
+
+// Generates 512 (64*8) pixels from a sha 512 hmac
+void drbg_generate(uint8_t *sha512_hmac, uint8_t *pixels){
+  uint32_t val;
+  int p = 0;
+  uint8_t dec=0;
+  memset(pixels, 0x00, 512);
+  int ret = 512, i = 0;
+
+  for (i=0; i<64; i++){
+    for (uint8_t j=0; j<8; j++){
+      pixels[p] = (sha512_hmac[i]&(1<<(7-j)))>>(7-j);
+      p++;
+    }
+  }
+}
+
+// Writes noise in revelaer image
+void drbg_write_noise(void){
+  int writtenPixels = 0, pixelsRemaining = 0;
+  uint8_t firstHmac = 1;
+  uint8_t hmac_noise[64];
+  uint32_t hmac_noise_32[16];
+  uint8_t pixels[512];
+
+  int YX;
+  uint8_t x, y, val, cpt;
+  cpt = 0;
+  val = 0;
+
+  for (x=0; x<IMG_WIDTH; x++){
+    for (y=0; y<IMG_HEIGHT/8; y++){
+      YX = y*IMG_WIDTH + x;
+      val = 0;
+      for (uint8_t j=0; j<8; j++){
+        if (pixelsRemaining == 0){
+          cx_hmac_sha512(G_bolos_ux_context.hmac_drbg_key, 64, G_bolos_ux_context.hmac_drbg_val, 64, hmac_noise, 64);
+          memcpy(G_bolos_ux_context.hmac_drbg_val, hmac_noise, 64);
+          drbg_generate(hmac_noise, pixels);
+          pixelsRemaining = 512;
+          writtenPixels = 0;
+          if (firstHmac)
+          {
+            firstHmac = 0;
+            while(pixels[writtenPixels]==0){
+              writtenPixels++;
+              pixelsRemaining--;
+            }
+          }          
+        }
+        val += (pixels[writtenPixels])<<j;
+        writtenPixels++;
+        pixelsRemaining--;
+      }
+      nvm_write(&N_storage.revealer_image[YX], (uint8_t *)&val, sizeof(uint8_t));
+    }
+    //IMG_HEIGHT = 97 = 12*8+1 => dump last pixel
+    writtenPixels++;
+    pixelsRemaining--;
+  }
 }
 
 // Code below is adapted from Nano S MCU screen HAL driver, screen is replaced by an image matrix stored in nvram cf revealer.h
 unsigned int screen_changed; // to avoid screen update for nothing
-
 int screen_draw_x;
 int screen_draw_y;
 unsigned int screen_draw_width;
@@ -279,49 +285,6 @@ void draw_bitmap_within_rect(int x, int y, unsigned int width, unsigned int heig
 
   draw_bitmap_within_rect_internal(bit_per_pixel, bitmap, bitmap_length_bits);
 }
-
-/*void draw_bitmap_continue(unsigned int bit_per_pixel, const unsigned char* bitmap, unsigned int bitmap_length_bits) {
-  draw_bitmap_within_rect_internal(bit_per_pixel, bitmap, bitmap_length_bits);
-}*/
-
-/*void draw_rect(unsigned int color, int x, int y, unsigned int width, unsigned int height) {
-  unsigned int i;
-  if (x+width > IMG_WIDTH || x < 0) {
-    return;
-  }
-  if (y+height > IMG_HEIGHT || y < 0) {
-    return;
-  }
-  unsigned int YX = (y/8)*IMG_WIDTH + x;
-  unsigned int Ybitmask = 1<<(y%8); 
-  unsigned int YXlinemax = YX + width;
-  char val;
-  screen_changed=1;
-  i = width*height;
-  while(i--) {
-    // 2 colors only
-    val = N_storage.revealer_image[YX];
-    if (color) {
-      val |= Ybitmask;
-    }
-    else {
-      val &= ~Ybitmask;
-    }
-    nvm_write(&N_storage.revealer_image[YX], (char*)&val, sizeof(char));
-    YX++;
-    if (YX >= YXlinemax) {
-      y++;
-      height--;
-      // update fast bit operation variables
-      YX = (y/8)*IMG_WIDTH + x;
-      YXlinemax = YX + width;
-      Ybitmask = 1<<(y%8);
-    }
-    if (height == 0) {
-      break;
-    }
-  }
-}*/
 
 int draw_string(bagl_font_t font_id, unsigned int fgcolor, unsigned int bgcolor, int x, int y, unsigned int width, unsigned int height, const void* text, unsigned int text_length, unsigned char text_encoding) {
   unsigned int xx;
@@ -601,25 +564,6 @@ void write_words(void){
     os_memset(G_bolos_ux_context.words, NULL, SEED_SIZE);
     os_memset(&(G_bolos_ux_context.words_length), NULL, sizeof(int));
     os_memset(G_bolos_ux_context.noise_seed, NULL, NOISE_SEED_LEN);
-}
-
-void write_noise(void){
-  int YX;
-  uint8_t x, y, val, cpt;
-  cpt = 0;
-  val = 0;
-  for (x=0; x<IMG_WIDTH; x++){
-    for (y=0; y<IMG_HEIGHT/8; y++){
-      YX = y*IMG_WIDTH + x;
-      val = 0;
-      for (uint8_t j=0; j<8; j++){
-        val += (random_getrandbits(2)&1)<<j;
-      }
-      nvm_write(&N_storage.revealer_image[YX], (uint8_t *)&val, sizeof(uint8_t));
-    }
-    //IMG_HEIGHT = 97 = 12*8+1 => dump last pixel 
-    random_getrandbits(2);
-  }
 }
 
 int send_row(int x){

@@ -154,29 +154,6 @@ return_to_dashboard:
     return;
 }
 
-
-/*// Pick the text elements to display
-static unsigned char display_text_part() {
-    unsigned int i;
-    WIDE char *text = (char*) G_io_apdu_buffer + 5;
-    if (text[current_text_pos] == '\0') {
-        return 0;
-    }
-    i = 0;
-    while ((text[current_text_pos] != 0) && (text[current_text_pos] != '\n') &&
-           (i < MAX_CHARS_PER_LINE)) {
-        lineBuffer[i++] = text[current_text_pos];
-        current_text_pos++;
-    }
-    if (text[current_text_pos] == '\n') {
-        current_text_pos++;
-    }
-    lineBuffer[i] = '\0';
-
-    return 1;
-}*/
-
-
 unsigned char io_event(unsigned char channel) {
     // nothing done with the event, throw an error on the transport layer if
     // needed

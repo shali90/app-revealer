@@ -611,12 +611,11 @@ void ui_type_noise_seed_nanos_init(void){
   UX_DISPLAY(ui_type_noise_seed_nanos,ui_type_noise_seed_nanos_prepro);
 }
 
-
 void initPrngAndWriteNoise_Cb(void){
   G_bolos_ux_context.processing = 0;
   io_seproxyhal_general_status();
-  noiseSeedToKey();
-  init_by_array(4);
-  write_noise();
+  drbg_hmac_init();
+  drbg_reseed(G_bolos_ux_context.noise_seed_bytearray, 1);
+  drbg_write_noise();
   ui_idle_init();
 }

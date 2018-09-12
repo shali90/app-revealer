@@ -323,9 +323,9 @@ class Revealer(QWidget):
         black = qRgba(0, 0, 0, 255)
         for i in range(img.height()):
             if b[i]==0:
-                img.setPixel(x,i,0)
+                img.setPixel(x,i,1)
             if b[i]==1:
-                img.setPixel(x, i, 1)
+                img.setPixel(x, i, 0)
         if refresh is True:
             img.save(os.getcwd() + '/column.png')
         return img
@@ -344,7 +344,7 @@ class Revealer(QWidget):
             #if args.apdu:
             #    print("<= Clear " + str(result))
         
-        #img.save(self.base_dir+ '/test.png')
+        # img.save(self.base_dir+ '/test.png')
         cypher = self.pixelcode_2x2(img)
         cypher.invertPixels()
         cypher = self.overlay_marks(cypher)
