@@ -403,46 +403,11 @@ int draw_string(bagl_font_t font_id, unsigned int fgcolor, unsigned int bgcolor,
   return (y<<16)|(xx&0xFFFF);
 }
 
-// #define LINE_H_11   12
-// #define NUM_LINE_11   8
 
-// #define LINE_H_16   17
-// #define NUM_LINE_16   5
-
-uint8_t max_char_l;
 uint8_t charRemaining;
 
-// Display helpers function, computes the next number of chars that fit one line without cutting a word, depending on the used font
-// and returns the corresponding number of pixels for horizontal alignment
-// uint8_t getNextLinePixelWidth(const char* text, bagl_font_t font_id, uint8_t* numChar){
-//   uint8_t linePixelWidth, linePixelWidthInt, numCharInt;
-//   linePixelWidth = 0;
-//   numCharInt = 0;
-//   *numChar = 0;
-//   char ch;
-//   linePixelWidthInt = 0;
-
-//   bagl_font_t *font = &font_id;
-
-//   while (charRemaining-numCharInt>0){
-//     ch = *((unsigned char*)text);
-//     if ((ch==' ')||(ch==NULL)){
-//       linePixelWidth = linePixelWidthInt;
-//       *numChar = numCharInt;
-//     }
-//     // -6 t0 add 3*2 blank pixels on left and right
-//     if (linePixelWidthInt > (IMG_WIDTH)){
-//       return linePixelWidth;
-//     }
-//     ch -= font->first_char;
-//     linePixelWidthInt += font->characters[ch].char_width;
-//     numCharInt++;
-//     *text++;
-//   }
-//   return linePixelWidthInt;
-// }
 uint8_t getNextLinePixelWidth(const char* text, bagl_font_t font_id, uint8_t* numChar){
-  uint8_t linePixelWidth, linePixelWidthInt, numCharInt;
+  uint8_t linePixelWidth, linePixelWidthInt, numCharInt, prout;
   linePixelWidth = 0;
   numCharInt = 0;
   *numChar = 0;
@@ -457,18 +422,18 @@ uint8_t getNextLinePixelWidth(const char* text, bagl_font_t font_id, uint8_t* nu
       linePixelWidth = linePixelWidthInt;
       *numChar = numCharInt;
     }
-    // -18 t0 add 9*2 pixels on left and right
-    if (linePixelWidthInt > (IMG_WIDTH-20)){
+    // -10 to add at least 5 pixels on the left and on the right
+    if ((linePixelWidthInt > (IMG_WIDTH-10))||(ch==NULL)){
       return linePixelWidth;
     }
     ch -= font->first_char;
+    prout = font->characters[ch].char_width;
     linePixelWidthInt += font->characters[ch].char_width;
-    numCharInt++;
+    numCharInt++;    
     *text++;
   }
   return linePixelWidthInt;
 }
-
 
 void write_words(void){
   int bgcolor = 0x000000;
@@ -478,13 +443,11 @@ void write_words(void){
   uint8_t line_h;
   bagl_font_t font;
   uint8_t fontId;
-  uint8_t charRemainingBKP;
    
   //First check if words can fit in image with 16px font
   line = 0;
   numLine = 0;
   charRemaining = G_bolos_ux_context.words_length + 1; //include '\0'
-  //font = fontFONT_SEMIBOLD_18PX;
   fontId = BAGL_FONT_FONT_SEMIBOLD_18PX;
   line_h = fontFONT_SEMIBOLD_18PX.char_height;
   strcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words);
@@ -493,19 +456,13 @@ void write_words(void){
     strcpy(G_bolos_ux_context.string_buffer, &G_bolos_ux_context.string_buffer[nextLineIdx+1]);
     charRemaining -= (nextLineIdx+1);
     numLine++;
-    // SPRINTF(G_bolos_ux_context.string_buffer, "%d %d %d %d\0", numLine, linePixCnt, nextLineIdx+1, charRemaining);
-    // draw_string(fontFONT_SEMIBOLD_18PX, fgcolor, bgcolor, 0,  line, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, strlen(G_bolos_ux_context.string_buffer), BAGL_ENCODING_LATIN1); 
     line+=line_h;
   }
   line = 0;
-  // if (charRemaining == 0){
-  //   goto write_words_img;
-  // }
   //Chars remaining, words don't fit in image with 16px font > use 11px font
   if (charRemaining !=0){
     charRemaining = G_bolos_ux_context.words_length+1; // include \0 
     numLine = 0;
-    //font = fontFONT_LIGHT_11PX;
     fontId = BAGL_FONT_FONT_EXTRABOLD_11PX;
     line_h = fontFONT_EXTRABOLD_11PX.char_height;
     strcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words);
@@ -520,7 +477,6 @@ void write_words(void){
     if (charRemaining !=0){
       charRemaining = G_bolos_ux_context.words_length+1; // include \0 
       numLine = 0;
-      // font = fontFONT_LIGHT_11PX;
       fontId = BAGL_FONT_FONT_LIGHT_11PX;
       line_h = fontFONT_LIGHT_11PX.char_height;
       strcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.words);
@@ -552,12 +508,9 @@ void write_words(void){
     charRemaining = G_bolos_ux_context.words_length+1; // include \0
     while ((charRemaining>0)&&(line+line_h < IMG_HEIGHT)){
       linePixCnt = getNextLinePixelWidth(G_bolos_ux_context.words, font, &nextLineIdx);
-      draw_string(font, fgcolor, bgcolor, /*(IMG_WIDTH-linePixCnt)/2*/10,  line, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.words, nextLineIdx, BAGL_ENCODING_LATIN1);
+      draw_string(font, fgcolor, bgcolor, (IMG_WIDTH-linePixCnt)/2/*10*/,  line, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.words, nextLineIdx, BAGL_ENCODING_LATIN1);
       strcpy(G_bolos_ux_context.words, &G_bolos_ux_context.words[nextLineIdx+1]); // Dump space char
-      charRemainingBKP = charRemaining;
       charRemaining -= (nextLineIdx+1);
-      // SPRINTF(G_bolos_ux_context.string_buffer, "%d %d %d %d\0", (IMG_WIDTH-linePixCnt)/2, linePixCnt, nextLineIdx+1, charRemaining);
-      // draw_string(font, fgcolor, bgcolor, 0,  line, IMG_WIDTH, IMG_HEIGHT, G_bolos_ux_context.string_buffer, strlen(G_bolos_ux_context.string_buffer), BAGL_ENCODING_LATIN1);  
       line += line_h;
     }
     // wipe sensitive data
