@@ -97,7 +97,7 @@ void drbg_hmac_init(void){
   memcpy(&noise_seed_processed[33], &G_bolos_ux_context.noise_seed[33], 3);
   // Convert noise seed (hexstring) to byte array
   if (hexStringToByteArray(noise_seed_processed, 36, G_bolos_ux_context.noise_seed_bytearray)){
-    PRINTF("%.*h \n", 18, G_bolos_ux_context.noise_seed_bytearray);
+    // PRINTF("%.*h \n", 18, G_bolos_ux_context.noise_seed_bytearray);
   }
   else {
     PRINTF("CONVERT ERROR\n");
@@ -121,6 +121,7 @@ void drbg_generate(uint8_t *sha512_hmac, uint8_t *pixels){
   }
 }
 
+
 // Writes noise in revelaer image
 void drbg_write_noise(void){
   int writtenPixels = 0, pixelsRemaining = 0;
@@ -134,6 +135,8 @@ void drbg_write_noise(void){
   cpt = 0;
   val = 0;
 
+  uint8_t zero = 0;
+
   for (x=0; x<IMG_WIDTH; x++){
     for (y=0; y<IMG_HEIGHT/8; y++){
       YX = y*IMG_WIDTH + x;
@@ -145,6 +148,11 @@ void drbg_write_noise(void){
           drbg_generate(hmac_noise, pixels);
           pixelsRemaining = 512;
           writtenPixels = 0;
+          if (zero){
+            zero = 0;
+            writtenPixels++;
+            pixelsRemaining--;            
+          }
           if (firstHmac)
           {
             firstHmac = 0;
@@ -161,8 +169,13 @@ void drbg_write_noise(void){
       nvm_write(&N_storage.revealer_image[YX], (uint8_t *)&val, sizeof(uint8_t));
     }
     //IMG_HEIGHT = 97 = 12*8+1 => dump last pixel
-    writtenPixels++;
-    pixelsRemaining--;
+    if (pixelsRemaining !=0){
+      writtenPixels++;
+      pixelsRemaining--;      
+    }
+    else {
+      zero = 1;
+    }
   }
 }
 
