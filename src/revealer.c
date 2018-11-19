@@ -9,15 +9,25 @@ WIDE internalStorage_t N_storage_real;
 uint8_t isNoise(char * string, uint8_t hashPos){
   uint8_t computedHash[32];
   uint8_t hashIdCMP[4];
+  uint8_t stringLowerCase[36];
   int hashId = 0;
   uint8_t digit;
+
+  if (string == NULL){
+    return 0;
+  }
+
+  //convert ABCDEF to lower case
+  for (int i=0; i<36; i++){
+    stringLowerCase[i] = ((string[i]>=0x41)&&(string[i]<=0x46))?string[i]+0x20:string[i];
+  }
   
   cx_sha256_t context;
   cx_sha256_init(&context);
-  cx_hash(&context,CX_LAST,string,hashPos,computedHash, 32);
+  cx_hash(&context,CX_LAST,stringLowerCase,hashPos,computedHash, 32);
 
   for (uint8_t n=0; n<3; n++){
-    hashId += (string[n+hashPos] >= 0x30)&&(string[n+hashPos] <= 0x39)?(string[n+hashPos] - 0x30)<<4*(2-n):(string[n+hashPos] - 0x57)<<4*(2-n);
+    hashId += (stringLowerCase[n+hashPos] >= 0x30)&&(stringLowerCase[n+hashPos] <= 0x39)?(stringLowerCase[n+hashPos] - 0x30)<<4*(2-n):(stringLowerCase[n+hashPos] - 0x57)<<4*(2-n);
   }
   hashIdCMP[0] = computedHash[30]&0x0F;
   hashIdCMP[1] = computedHash[31];

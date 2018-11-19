@@ -295,8 +295,8 @@ unsigned int ui_revealer_final_button(unsigned int button_mask,unsigned int butt
   }
 }*/
 
-#define PIN_DIGIT_LEN 18
-static const char C_pin_digit[] = {'0','1','2','3','4','5','6','7','8','9','a','b','c', 'd', 'e', 'f', '<','V'};
+#define PIN_DIGIT_LEN 17
+static const char C_pin_digit[] = {'0','1','2','3','4','5','6','7','8','9','A','B','C', 'D', 'E', 'F', '<'};
 
 const bagl_element_t ui_noise_seed_final_compare_nanos[] = {
     // erase
@@ -423,24 +423,39 @@ const bagl_element_t ui_type_noise_seed_nanos[] = {
 #define MAX_CHAR_PER_LINE 16
 
 unsigned int ui_type_noise_seed_nanos_prepro(const  bagl_element_t* element){
+  //36 noise seed len
+  //8 number of spaces (digits are grouped 4by4 separated by spaces)
+  //1 for EOL
+  uint8_t intermediaryBuffer[36+8+1];
+  uint8_t digitsAndSpaceCounter = 0;
+  uint8_t idx = 0;
+  uint8_t printIdx = 0;
+  uint8_t processed = 1;
+  memset(intermediaryBuffer, 0x00, 36+8+1);
   if (element->component.userid == 0x02){ // ie noise_seed_display
-    if (G_bolos_ux_context.typedDigitLen >= MAX_CHAR_PER_LINE-1){
-      //G_bolos_ux_context.string_buffer = G_bolos_ux_context.noise_seed+(G_bolos_ux_context.typedDigitLen-MAX_CHAR_PER_LINE);
-      //memcpy(G_bolos_ux_context.string_buffer, G_bolos_ux_context.noise_seed[G_bolos_ux_context.typedDigitLen-MAX_CHAR_PER_LINE], 16);
-      G_bolos_ux_context.string_buffer[16] = '\0';
-      G_bolos_ux_context.string_buffer[15] = C_pin_digit[G_bolos_ux_context.offset];
-      //G_bolos_ux_context.string_buffer[15] = &C_icon_validate;      
-      int j = G_bolos_ux_context.typedDigitLen-1;
-      for (int i=14; i>=0; i--){
-        G_bolos_ux_context.string_buffer[i] = G_bolos_ux_context.noise_seed[j--];
-        //noise_seed_display[i] = '0';
-        //j--;
+    while(idx<G_bolos_ux_context.typedDigitLen){
+      // insert space between 4 digit groups processed to skip first digit
+      if ((idx%4==0)&&(!processed)){
+        intermediaryBuffer[digitsAndSpaceCounter] = ' ';
+        processed = 1;
       }
-    }
-    else{
-      // G_bolos_ux_context.string_buffer[G_bolos_ux_context.typedDigitLen] = C_pin_digit[G_bolos_ux_context.offset];  
-      G_bolos_ux_context.string_buffer[G_bolos_ux_context.typedDigitLen] = C_pin_digit[G_bolos_ux_context.offset]; 
+      // insert digit
+      else {
+        intermediaryBuffer[digitsAndSpaceCounter] = G_bolos_ux_context.noise_seed[idx];
+        idx ++;
+        processed = 0;          
+      }
+      digitsAndSpaceCounter++;
     }    
+    if ((digitsAndSpaceCounter+1)%5==0){
+      intermediaryBuffer[digitsAndSpaceCounter] = ' ';
+      digitsAndSpaceCounter++;
+    }
+    // Append current typed digit to intermediary buffer
+    intermediaryBuffer[digitsAndSpaceCounter] = C_pin_digit[G_bolos_ux_context.offset];      
+    // Copy last MAX_CHAR_PER_LINE from intermediary buffer to string_buffer for display
+    printIdx = strlen(intermediaryBuffer)>MAX_CHAR_PER_LINE ? strlen(intermediaryBuffer)-MAX_CHAR_PER_LINE:0;
+    strcpy(G_bolos_ux_context.string_buffer, &intermediaryBuffer[printIdx]);
   }
   return 1;
 }
@@ -506,31 +521,17 @@ ui_processing_before_element_display_callback(const bagl_element_t *element)
 
 unsigned int ui_type_noise_seed_nanos_button(unsigned int button_mask,unsigned int button_mask_counter) {
   switch (button_mask) {
-  case BUTTON_EVT_RELEASED | BUTTON_LEFT:
+  case BUTTON_EVT_RELEASED | BUTTON_LEFT: //decrement digit
       if (G_bolos_ux_context.offset == 0){
-        if (G_bolos_ux_context.typedDigitLen < 35){
-          G_bolos_ux_context.offset = G_bolos_ux_context.typedDigitLen == 0 ? PIN_DIGIT_LEN-3:PIN_DIGIT_LEN-2;          
-        }
-        else {
-          G_bolos_ux_context.offset = G_bolos_ux_context.typedDigitLen == 0 ? PIN_DIGIT_LEN-2:PIN_DIGIT_LEN-1;
-        }
+        G_bolos_ux_context.offset = G_bolos_ux_context.typedDigitLen == 0 ? PIN_DIGIT_LEN-2:PIN_DIGIT_LEN-1;
       }
       else {
         G_bolos_ux_context.offset = G_bolos_ux_context.offset-1;
       }
       break;
 
-  case BUTTON_EVT_RELEASED | BUTTON_RIGHT:
-      //confirm
-      //G_bolos_ux_context.offset = (G_bolos_ux_context.offset+1)%PIN_DIGIT_LEN;
-      if (G_bolos_ux_context.typedDigitLen < 35){
-        G_bolos_ux_context.offset = G_bolos_ux_context.typedDigitLen == 0 ? (G_bolos_ux_context.offset+1)%(PIN_DIGIT_LEN-2):(G_bolos_ux_context.offset+1)%(PIN_DIGIT_LEN-1);
-        // G_bolos_ux_context.offset = (G_bolos_ux_context.offset+1)%(PIN_DIGIT_LEN-1);         
-      }
-      else {
-        G_bolos_ux_context.offset = (G_bolos_ux_context.offset+1)%PIN_DIGIT_LEN;
-      }
-      //seed_display_confirm();
+  case BUTTON_EVT_RELEASED | BUTTON_RIGHT:  //increment digit
+        G_bolos_ux_context.offset = G_bolos_ux_context.typedDigitLen == 0 ? (G_bolos_ux_context.offset+1)%(PIN_DIGIT_LEN-1):(G_bolos_ux_context.offset+1)%PIN_DIGIT_LEN;
       break;
 
   case BUTTON_EVT_RELEASED|BUTTON_LEFT|BUTTON_RIGHT:
@@ -539,46 +540,20 @@ unsigned int ui_type_noise_seed_nanos_button(unsigned int button_mask,unsigned i
           if (G_bolos_ux_context.typedDigitLen > 0){
             G_bolos_ux_context.string_buffer[G_bolos_ux_context.typedDigitLen] = '\0';
             G_bolos_ux_context.typedDigitLen--;
-            //G_bolos_ux_context.string_buffer[G_bolos_ux_context.typedDigitLen] = '_';              
           }
           G_bolos_ux_context.offset = G_bolos_ux_context.typedDigitLen == 0 ? 7:PIN_DIGIT_LEN-2;
           break;
-        case 'V': //Validate noise seed
-          //if (G_bolos_ux_context.typedDigitLen == 35){
-            //display_processing_screen();
-            //G_bolos_ux_context.processing = 2;
-            if (isNoise(G_bolos_ux_context.noise_seed,G_bolos_ux_context.typedDigitLen-3)){
-              G_bolos_ux_context.noise_seed_valid = 1;
-              //ui_type_noise_seed_nanos_validate();
-              //display_processing_screen();
-              //G_bolos_ux_context.processing = 2;
-              //UX_DISPLAY(ui_processing, ui_processing_before_element_display_callback);
-            }
-            else {
-              G_bolos_ux_context.noise_seed_valid = 0;             
-            }
-            //ui_idle_init();
-          //}
-          UX_DISPLAY(ui_noise_seed_final_compare_nanos, ui_noise_seed_final_compare_nanos_prepro);
-          break;
-        default:                    
+        default:  //Confirm digit value               
           G_bolos_ux_context.noise_seed[G_bolos_ux_context.typedDigitLen] = C_pin_digit[G_bolos_ux_context.offset];
           G_bolos_ux_context.typedDigitLen++;
           G_bolos_ux_context.offset = 7;
           if (G_bolos_ux_context.typedDigitLen == 36){
-            //display_processing_screen();
-            //G_bolos_ux_context.processing = 2;
             if (isNoise(G_bolos_ux_context.noise_seed,33)){
               G_bolos_ux_context.noise_seed_valid = 1;
-              //ui_type_noise_seed_nanos_validate();
-              //display_processing_screen();
-              //G_bolos_ux_context.processing = 2;
-              //UX_DISPLAY(ui_processing, ui_processing_before_element_display_callback);
             }
             else {
               G_bolos_ux_context.noise_seed_valid = 0;             
             }
-            //ui_idle_init();
             UX_DISPLAY(ui_noise_seed_final_compare_nanos, ui_noise_seed_final_compare_nanos_prepro);
           }
           break;
