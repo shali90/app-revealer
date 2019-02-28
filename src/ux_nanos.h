@@ -5,8 +5,6 @@
 #include "os.h"
 #include "bolos_ux_common.h"
 
-
-
 #define SEED_SIZE 200
 
 extern char  text[SEED_SIZE];

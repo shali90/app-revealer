@@ -156,14 +156,12 @@ unsigned int ui_confirm_seed_display_nanos_button(unsigned int button_mask,unsig
     }
 }*/
 
-
 void ui_idle_init(void) {
   uiState = UI_IDLE;
 
-  //PRINTF("HELLO\n");
-
   if ((G_bolos_ux_context.noise_seed_valid == 1)&&(G_bolos_ux_context.words_seed_valid == 1)){
     //Activate io
+    USB_power(0);
     USB_power(1);
     UX_MENU_DISPLAY(0, ui_idle_mainmenu_nanos_all_valid, NULL);
   }
@@ -179,7 +177,7 @@ void ui_idle_init(void) {
   }
 
   // setup the first screen changing
-  UX_CALLBACK_SET_INTERVAL(1000);
+  UX_CALLBACK_SET_INTERVAL(200);
 }
 
 void ui_type_seed_words_init(void){
@@ -187,7 +185,7 @@ void ui_type_seed_words_init(void){
 
   UX_MENU_DISPLAY(0, ui_type_seed_words_menu_nanos, NULL);
   // setup the first screen changing
-  UX_CALLBACK_SET_INTERVAL(1000);
+  UX_CALLBACK_SET_INTERVAL(200);
 }
 
 /*void ui_confirm_seed_display_init(void){
@@ -457,6 +455,7 @@ unsigned int ui_type_noise_seed_nanos_prepro(const  bagl_element_t* element){
     printIdx = strlen(intermediaryBuffer)>MAX_CHAR_PER_LINE ? strlen(intermediaryBuffer)-MAX_CHAR_PER_LINE:0;
     strcpy(G_bolos_ux_context.string_buffer, &intermediaryBuffer[printIdx]);
   }
+  // UX_CALLBACK_SET_INTERVAL(200);
   return 1;
 }
 
@@ -562,6 +561,7 @@ unsigned int ui_type_noise_seed_nanos_button(unsigned int button_mask,unsigned i
   default:
       break;
   }
+  UX_CALLBACK_SET_INTERVAL(200);
   return 0;
 }
 
@@ -584,6 +584,7 @@ void revealer_struct_init(void){
 void ui_type_noise_seed_nanos_init(void){
   revealer_struct_init();
   UX_DISPLAY(ui_type_noise_seed_nanos,ui_type_noise_seed_nanos_prepro);
+  UX_CALLBACK_SET_INTERVAL(200);
 }
 
 void initPrngAndWriteNoise_Cb(void){

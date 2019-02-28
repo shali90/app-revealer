@@ -36,7 +36,6 @@ extern enum UI_STATE uiState;
 
 ux_state_t ux;
 
-//static unsigned char display_text_part(void);
 
 #define MAX_CHARS_PER_LINE 49
 
@@ -167,6 +166,10 @@ unsigned char io_event(unsigned char channel) {
     case SEPROXYHAL_TAG_BUTTON_PUSH_EVENT: // for Nano S
         UX_BUTTON_PUSH_EVENT(G_io_seproxyhal_spi_buffer);
         break;
+    // unknown events are acknowledged
+    default:
+        UX_DEFAULT_EVENT();
+        break;
 
     case SEPROXYHAL_TAG_DISPLAY_PROCESSED_EVENT:
         if ((uiState == UI_TEXT) &&
@@ -190,18 +193,21 @@ unsigned char io_event(unsigned char channel) {
 
     case SEPROXYHAL_TAG_TICKER_EVENT:
         #ifdef TARGET_NANOS
-            UX_TICKER_EVENT(G_io_seproxyhal_spi_buffer, {
-                // defaulty retrig very soon (will be overriden during
-                // stepper_prepro)
-                UX_CALLBACK_SET_INTERVAL(100);
-                UX_REDISPLAY();
-            });
+            // UX_TICKER_EVENT(G_io_seproxyhal_spi_buffer, {
+            //     // defaulty retrig very soon (will be overriden during
+            //     // stepper_prepro)
+            //     UX_CALLBACK_SET_INTERVAL(200);
+            //     NULL;
+            //     // UX_REDISPLAY();
+            // });
+                UX_TICKER_EVENT(G_io_seproxyhal_spi_buffer, 
+                {
+                   // only allow display when not locked of overlayed by an OS UX.
+                  if (UX_ALLOWED) {
+                    UX_REDISPLAY(); 
+                  }
+                });
         #endif 
-        break;
-
-    // unknown events are acknowledged
-    default:
-        UX_DEFAULT_EVENT();
         break;
     }
 
@@ -246,10 +252,9 @@ __attribute__((section(".boot"))) int main(void) {
             }
 #endif
 
-            USB_power(0);
-            //USB_power(1);
             revealer_struct_init();
             #ifdef WORDS_IMG_DBG
+                USB_power(0);
                 USB_power(1);
                 // SPRINTF(G_bolos_ux_context.words, "fiscal price law neutral script buyer desert join load venue crucial cloth"); // bug last line 18px font
                 SPRINTF(G_bolos_ux_context.words, "sadness they ceiling trash size skull critic shy toddler never man drastic");
