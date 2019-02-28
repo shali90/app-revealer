@@ -160,9 +160,9 @@ void ui_idle_init(void) {
   uiState = UI_IDLE;
 
   if ((G_bolos_ux_context.noise_seed_valid == 1)&&(G_bolos_ux_context.words_seed_valid == 1)){
-    //Activate io
-    USB_power(0);
-    USB_power(1);
+    // //Activate io
+    // USB_power(0);
+    // USB_power(1);
     UX_MENU_DISPLAY(0, ui_idle_mainmenu_nanos_all_valid, NULL);
   }
   else if (G_bolos_ux_context.noise_seed_valid == 1){

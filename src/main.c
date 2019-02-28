@@ -251,7 +251,7 @@ __attribute__((section(".boot"))) int main(void) {
                 BLE_power(1, NULL);
             }
 #endif
-
+            USB_power(1);
             revealer_struct_init();
             #ifdef WORDS_IMG_DBG
                 USB_power(0);
