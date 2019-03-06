@@ -2,6 +2,7 @@
 #include "error_codes.h"
 #include "revealer.h"
 
+#define UX_CALLBACK_INTERVAL_VALUE      200
 
 enum UI_STATE { UI_IDLE, UI_TEXT, UI_APPROVAL };
 
@@ -158,11 +159,11 @@ unsigned int ui_confirm_seed_display_nanos_button(unsigned int button_mask,unsig
 
 void ui_idle_init(void) {
   uiState = UI_IDLE;
-
+  // PRINTF("%d", G_io_apdu_media);
   if ((G_bolos_ux_context.noise_seed_valid == 1)&&(G_bolos_ux_context.words_seed_valid == 1)){
     // //Activate io
-    // USB_power(0);
-    // USB_power(1);
+    USB_power(0);
+    USB_power(1);
     UX_MENU_DISPLAY(0, ui_idle_mainmenu_nanos_all_valid, NULL);
   }
   else if (G_bolos_ux_context.noise_seed_valid == 1){
@@ -177,7 +178,7 @@ void ui_idle_init(void) {
   }
 
   // setup the first screen changing
-  UX_CALLBACK_SET_INTERVAL(200);
+  UX_CALLBACK_SET_INTERVAL(UX_CALLBACK_INTERVAL_VALUE);
 }
 
 void ui_type_seed_words_init(void){
@@ -185,7 +186,7 @@ void ui_type_seed_words_init(void){
 
   UX_MENU_DISPLAY(0, ui_type_seed_words_menu_nanos, NULL);
   // setup the first screen changing
-  UX_CALLBACK_SET_INTERVAL(200);
+  UX_CALLBACK_SET_INTERVAL(UX_CALLBACK_INTERVAL_VALUE);
 }
 
 /*void ui_confirm_seed_display_init(void){
@@ -540,7 +541,7 @@ unsigned int ui_type_noise_seed_nanos_button(unsigned int button_mask,unsigned i
             G_bolos_ux_context.string_buffer[G_bolos_ux_context.typedDigitLen] = '\0';
             G_bolos_ux_context.typedDigitLen--;
           }
-          G_bolos_ux_context.offset = G_bolos_ux_context.typedDigitLen == 0 ? 7:PIN_DIGIT_LEN-2;
+          G_bolos_ux_context.offset = G_bolos_ux_context.typedDigitLen == 0 ? 7:PIN_DIGIT_LEN-1;
           break;
         default:  //Confirm digit value               
           G_bolos_ux_context.noise_seed[G_bolos_ux_context.typedDigitLen] = C_pin_digit[G_bolos_ux_context.offset];
@@ -561,7 +562,7 @@ unsigned int ui_type_noise_seed_nanos_button(unsigned int button_mask,unsigned i
   default:
       break;
   }
-  UX_CALLBACK_SET_INTERVAL(200);
+  UX_CALLBACK_SET_INTERVAL(UX_CALLBACK_INTERVAL_VALUE);
   return 0;
 }
 
@@ -584,7 +585,7 @@ void revealer_struct_init(void){
 void ui_type_noise_seed_nanos_init(void){
   revealer_struct_init();
   UX_DISPLAY(ui_type_noise_seed_nanos,ui_type_noise_seed_nanos_prepro);
-  UX_CALLBACK_SET_INTERVAL(200);
+  UX_CALLBACK_SET_INTERVAL(UX_CALLBACK_INTERVAL_VALUE);
 }
 
 void initPrngAndWriteNoise_Cb(void){

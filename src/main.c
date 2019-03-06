@@ -76,78 +76,88 @@ static void sample_main(void) {
     //UX_CALLBACK_SET_INTERVAL(500);
     volatile unsigned int rx = 0;
     volatile unsigned int tx = 0;
-    uint8_t flags;
+    volatile uint8_t flags = 0;
     revealer_struct_init();
     for (;;) {
-    volatile unsigned short sw = 0;
+        volatile unsigned short sw = 0;
 
-    BEGIN_TRY {
-      TRY {
-        rx = tx;
-        tx = 0; // ensure no race in catch_other if io_exchange throws an error
-        rx = io_exchange(CHANNEL_APDU|flags, rx);
-        flags = 0;
+        BEGIN_TRY {
+          TRY {
+            rx = tx;
+            tx = 0; // ensure no race in catch_other if io_exchange throws an error
+            rx = io_exchange(CHANNEL_APDU|flags, rx);
+            flags = 0;
 
-        // no apdu received, well, reset the session, and reset the bootloader configuration
-        if (rx == 0) {
-          THROW(0x6982);
-        }
+            // no apdu received, well, reset the session, and reset the bootloader configuration
+            if (rx == 0) {
+              for(;;);
+              THROW(0x6982);
+            }
 
-        if (G_io_apdu_buffer[0] != 0x80) {
-          THROW(0x6E00);
-        }
+            if (G_io_apdu_buffer[0] != 0x80) {
+              THROW(0x6E00);
+            }
 
-        switch (G_io_apdu_buffer[1]) {
-            /*case 0xCA: // get hash
-                for (int i=0; i<4; i++){
-                    G_io_apdu_buffer[i] = hashDBG[i];
-                }
-                tx += 4;
-                THROW(SW_OK);
-                break;*/
-            case 0xCB: // Send img row chunk
-                #ifndef WORDS_IMG_DBG
-                if ((G_bolos_ux_context.words_seed_valid)&&(G_bolos_ux_context.noise_seed_valid)){
-                #else
-                if (1){
-                #endif
-                    row_nb = G_io_apdu_buffer[3];
-                    tx += send_row(row_nb);
+            switch (G_io_apdu_buffer[1]) {
+                /*case 0xCA: // get hash
+                    for (int i=0; i<4; i++){
+                        G_io_apdu_buffer[i] = hashDBG[i];
+                    }
+                    tx += 4;
                     THROW(SW_OK);
-                }
-                else {
-                    THROW(REVEALER_UNSET);
-                }
+                    break;*/
+                case 0xCB: // Send img row chunk
+                    #ifndef WORDS_IMG_DBG
+                    if ((G_bolos_ux_context.words_seed_valid)&&(G_bolos_ux_context.noise_seed_valid)){
+                    #else
+                    if (1){
+                    #endif
+                        row_nb = G_io_apdu_buffer[3];
+                        if (row_nb >= IMG_WIDTH){
+                            THROW(ROW_OUT_OF_RANGE);
+                        }
+                        else {
+                            tx += send_row(row_nb);
+                            THROW(SW_OK);                            
+                        }
+                    }
+                    else {
+                        THROW(REVEALER_UNSET);
+                    }
+                    break;
+                default:
+                THROW(0x6D00);
                 break;
-            default:
-            THROW(0x6D00);
-            break;
+            }
+          }
+          CATCH_OTHER(e) {
+            PRINTF("%d", e);
+            switch(e & 0xF000) {
+              case 0x6000:
+                sw = e;
+                break;
+              case SW_OK:
+                sw = e;
+                break;
+              default:
+                sw = 0x6800 | (e&0x7FF);
+                break;
+            }
+            // Unexpected exception => report 
+            G_io_apdu_buffer[tx] = sw>>8;
+            G_io_apdu_buffer[tx+1] = sw;
+            tx += 2;
+            // test to avoid INVALID_STATE exception when USB is not yet powered
+            // if (G_io_apdu_media != IO_APDU_MEDIA_NONE){
+                io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, tx);
+            // }
+            flags |= IO_ASYNCH_REPLY;
+          }
+          FINALLY {
+          }
         }
+        END_TRY;
       }
-      CATCH_OTHER(e) {
-        switch(e & 0xF000) {
-          case 0x6000:
-            sw = e;
-            break;
-          case SW_OK:
-            sw = e;
-            break;
-          default:
-            sw = 0x6800 | (e&0x7FF);
-            break;
-        }
-        // Unexpected exception => report 
-        G_io_apdu_buffer[tx] = sw>>8;
-        G_io_apdu_buffer[tx+1] = sw;
-        tx += 2;
-        io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, tx);
-        flags |= IO_ASYNCH_REPLY;
-      }
-      FINALLY {
-      }
-    }
-    END_TRY;
-  }
 
 return_to_dashboard:
     return;
@@ -156,7 +166,7 @@ return_to_dashboard:
 unsigned char io_event(unsigned char channel) {
     // nothing done with the event, throw an error on the transport layer if
     // needed
-
+    // PRINTF("%d", G_io_apdu_media);
     // can't have more than one tag in the reply, not supported yet.
     switch (G_io_seproxyhal_spi_buffer[0]) {
     case SEPROXYHAL_TAG_FINGER_EVENT:
@@ -166,6 +176,13 @@ unsigned char io_event(unsigned char channel) {
     case SEPROXYHAL_TAG_BUTTON_PUSH_EVENT: // for Nano S
         UX_BUTTON_PUSH_EVENT(G_io_seproxyhal_spi_buffer);
         break;
+
+    case SEPROXYHAL_TAG_STATUS_EVENT:
+        if (G_io_apdu_media == IO_APDU_MEDIA_USB_HID &&
+            !(U4BE(G_io_seproxyhal_spi_buffer, 3) &
+              SEPROXYHAL_TAG_STATUS_EVENT_FLAG_USB_POWERED)) {
+            THROW(EXCEPTION_IO_RESET);
+        }
     // unknown events are acknowledged
     default:
         UX_DEFAULT_EVENT();
@@ -186,7 +203,7 @@ unsigned char io_event(unsigned char channel) {
             }
             else
             {
-                UX_DISPLAYED_EVENT();
+                UX_DISPLAYED_EVENT({});
             }
         }
         break;
@@ -220,6 +237,20 @@ unsigned char io_event(unsigned char channel) {
     return 1;
 }
 
+void app_exit(void) {
+    BEGIN_TRY_L(exit) {
+        TRY_L(exit) {
+            os_sched_exit(-1);
+        }
+        FINALLY_L(exit) {
+        }
+    }
+    END_TRY_L(exit);
+}
+
+// TODO remove on future SDK update for timeout init 
+extern G_io_usb_ep_timeouts[IO_USB_MAX_ENDPOINTS];
+
 __attribute__((section(".boot"))) int main(void) {
     // exit critical section
     __asm volatile("cpsie i");
@@ -236,46 +267,44 @@ __attribute__((section(".boot"))) int main(void) {
     // ensure exception will work as planned
     os_boot();
 
-    UX_INIT();
 
-    BEGIN_TRY {
-        TRY {
-            io_seproxyhal_init();
-
-            
-#ifdef LISTEN_BLE
-            if (os_seph_features() &
-                SEPROXYHAL_TAG_SESSION_START_EVENT_FEATURE_BLE) {
-                BLE_power(0, NULL);
-                // restart IOs
-                BLE_power(1, NULL);
-            }
-#endif
-            USB_power(1);
-            revealer_struct_init();
-            #ifdef WORDS_IMG_DBG
+    for(;;){
+        UX_INIT();
+        BEGIN_TRY {
+            TRY {
+                io_seproxyhal_init();
+                // TODO remove on future SDK update for timeout init 
+                os_memset(G_io_usb_ep_timeouts, 0, sizeof(G_io_usb_ep_timeouts));                
+    #ifdef LISTEN_BLE
+                if (os_seph_features() &
+                    SEPROXYHAL_TAG_SESSION_START_EVENT_FEATURE_BLE) {
+                    BLE_power(0, NULL);
+                    // restart IOs
+                    BLE_power(1, NULL);
+                }
+    #endif      
+                // DOn't start USB transport, wait for backup to be ready
                 USB_power(0);
-                USB_power(1);
-                // SPRINTF(G_bolos_ux_context.words, "fiscal price law neutral script buyer desert join load venue crucial cloth"); // bug last line 18px font
-                SPRINTF(G_bolos_ux_context.words, "sadness they ceiling trash size skull critic shy toddler never man drastic");
-                // SPRINTF(G_bolos_ux_context.words, "feel miracle entry dust love drink kit what insane river blush pitch"); // bug last line 18px font
-                // SPRINTF(G_bolos_ux_context.words, "toto tata titi tutu tete toto tata titi tutu tete");
-                G_bolos_ux_context.words_length = strlen(G_bolos_ux_context.words);
-                write_words();
-            #endif
-            ui_idle_init();
-            sample_main();
-        }
-        CATCH_OTHER(e) {
-            /*switch(e){
-                case INVALID_NOISE_SEED:
+                revealer_struct_init();
+                #ifdef WORDS_IMG_DBG
+                    // SPRINTF(G_bolos_ux_context.words, "fiscal price law neutral script buyer desert join load venue crucial cloth"); // bug last line 18px font
+                    SPRINTF(G_bolos_ux_context.words, "sadness they ceiling trash size skull critic shy toddler never man drastic");
+                    // SPRINTF(G_bolos_ux_context.words, "feel miracle entry dust love drink kit what insane river blush pitch"); // bug last line 18px font
+                    // SPRINTF(G_bolos_ux_context.words, "toto tata titi tutu tete toto tata titi tutu tete");
+                    G_bolos_ux_context.words_length = strlen(G_bolos_ux_context.words);
+                    write_words();
+                #endif
                 ui_idle_init();
                 sample_main();
-                break;
-            }   */      
+            }
+            CATCH_ALL{
+                continue;
+            }
+            FINALLY {
+            }
         }
-        FINALLY {
-        }
+        END_TRY;
     }
-    END_TRY;
+    app_exit();
+    return 0;
 }
